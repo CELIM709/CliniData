@@ -1,9 +1,8 @@
 # CliniData
 Sistema de Gestión de Citas Medicas
 
-<div align="center">
-  <h1>🏥 Sistema de Gestión de Citas Médicas</h1>
-  <h3>Proyecto de Base de Datos II</h3>
+<div align="izquierda">
+  <h1>Proyecto de Base de Datos II</h1>
   <p>Universidad Nacional Experimental de Guayana (UNEG)</p>
 </div>
 
