@@ -1,0 +1,39 @@
+(: 1. ¿Qué citas tiene programadas un paciente? (Ej. 'PAC01') :)
+/clinica/citas/cita[@paciente_ref='PAC01' and estado='Programada']
+
+(: 2. ¿Qué pacientes ha atendido un médico en una fecha determinada? (Ej. Médico
+'EMP01' el '2026-08-25') :)
+/clinica/pacientes/paciente[@id_paciente =
+/clinica/consultas/consulta[@medico_ref='EMP01' and starts-with(fecha,
+'2026-08-25')]/@paciente_ref]
+
+(: 3. ¿Qué estudios tiene pendientes un paciente? (Ej. 'PAC01') :)
+/clinica/consultas/consulta[@paciente_ref='PAC01']/estudios/estudio[not(resultados/resultado)]
+
+(: 4. ¿Cuáles son los resultados de los exámenes de un paciente? (Ej. 'PAC01') :)
+/clinica/consultas/consulta[@paciente_ref='PAC01']/estudios/estudio/resultados/resultado
+
+(: 5. ¿Cuántas consultas se realizaron en un mes? (Ej. Agosto 2026: '2026-08') :)
+count(/clinica/consultas/consulta[starts-with(fecha, '2026-08')])
+
+(: 6. ¿Qué médicos pertenecen a una especialidad? (Ej. 'ESP01') :)
+/clinica/empleados/medicos/medico[contains(@especialidades_refs, 'ESP01')]
+
+(: 7. ¿Qué pacientes tienen citas para hoy? (Ej. Fecha '2026-08-29') :)
+/clinica/pacientes/paciente[@id_paciente =
+/clinica/citas/cita[contains(rango_cita, '2026-08-29')]/@paciente_ref]
+
+(: 8. ¿Cuál es el historial de consultas de un paciente? (Ej. 'PAC01') :)
+/clinica/consultas/consulta[@paciente_ref='PAC01']
+
+(: 9. ¿Qué estudios se han solicitado con mayor frecuencia? :)
+for $t in distinct-values(//estudio/tipo)
+let $total := count(//estudio[tipo=$t])
+order by $total descending
+return concat($t, ' - Total: ', $total)
+        
+(: 10. ¿Qué médicos tienen mayor cantidad de citas agendadas? :)
+for $m in distinct-values(//cita/@medico_ref)
+let $total := count(//cita[@medico_ref=$m])
+order by $total descending
+return concat('Médico ID: ', $m, ' - Citas: ', $total)

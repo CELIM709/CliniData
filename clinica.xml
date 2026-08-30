@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Documento XML Inicial (clinica.xml) -->
+<!DOCTYPE clinica SYSTEM "clinica.dtd">                           
+<clinica>
+
+    <!-- ESPECIALIDADES -->
+    <especialidades>
+        <especialidad id_especialidad="ESP01">
+            <nombre>Cardiología</nombre>
+            <descripcion>Atención del sistema cardiovascular</descripcion>
+        </especialidad>
+        <especialidad id_especialidad="ESP02">
+            <nombre>Bioanálisis / Laboratorio</nombre>
+            <descripcion>Análisis de muestras biológicas</descripcion>
+        </especialidad>
+        <especialidad id_especialidad="ESP03">
+            <nombre>Medicina General</nombre>
+            <descripcion>Atención médica general y preventiva</descripcion>
+        </especialidad>
+    </especialidades>
+
+    <!-- HORARIOS -->
+    <horarios>
+        <horario id_horario="HOR01">
+            <dias>Lunes a Viernes</dias>
+            <hora_entrada>08:00:00</hora_entrada>
+            <hora_salida>16:00:00</hora_salida>
+        </horario>
+    </horarios>
+
+    <!-- MEDICAMENTOS -->
+    <medicamentos>
+        <medicamento id_medicamento="MED01">
+            <nombre>Enalapril</nombre>
+            <laboratorio>Leti</laboratorio>
+            <presentacion>Tabletas 10mg</presentacion>
+        </medicamento>
+    </medicamentos>
+
+    <!-- EMPLEADOS (Médicos, Laboratoristas, Recepcionistas) -->
+    <empleados>
+        <medicos>
+            <medico id_empleado="EMP01" especialidades_refs="ESP01 ESP03" horario_ref="HOR01">
+                <cedula>V-15234567</cedula>
+                <nombre>Carlos</nombre>
+                <apellido>Mendoza</apellido>
+                <telefono>0414-1234567</telefono>
+                <email>cmendoza@clinica.com</email>
+                <direccion>Puerto Ordaz, Venezuela</direccion>
+                <salario>1200.00</salario>
+                <fecha_contrato>2022-01-15</fecha_contrato>
+                <rol>Médico Especialista</rol>
+                <clave_acceso>medico123</clave_acceso>
+                <carnet_medico>MPPS-89412</carnet_medico>
+                <tarifa>50.00</tarifa>
+            </medico>
+        </medicos>
+
+        <laboratoristas>
+            <laboratorista id_empleado="EMP02" especialidades_refs="ESP02" horario_ref="HOR01">
+                <cedula>V-18765432</cedula>
+                <nombre>Ana</nombre>
+                <apellido>Gómez</apellido>
+                <telefono>0424-7654321</telefono>
+                <email>agomez@clinica.com</email>
+                <direccion>San Félix, Venezuela</direccion>
+                <salario>800.00</salario>
+                <fecha_contrato>2023-03-10</fecha_contrato>
+                <rol>Bioanalista</rol>
+                <clave_acceso>lab123</clave_acceso>
+                <carnet_bioanalista>BIO-4512</carnet_bioanalista>
+                <area_Laboratorio>Bioquímica</area_Laboratorio>
+            </laboratorista>
+        </laboratoristas>
+
+        <recepcionistas>
+            <recepcionista id_empleado="EMP03" horario_ref="HOR01">
+                <cedula>V-20111222</cedula>
+                <nombre>María</nombre>
+                <apellido>Rojas</apellido>
+                <telefono>0412-9998877</telefono>
+                <email>mrojas@clinica.com</email>
+                <direccion>Alta Vista, Puerto Ordaz</direccion>
+                <salario>500.00</salario>
+                <fecha_contrato>2024-01-05</fecha_contrato>
+                <rol>Recepcionista</rol>
+                <clave_acceso>recep123</clave_acceso>
+                <numero_escritorio>1</numero_escritorio>
+                <extension_telefonica>104</extension_telefonica>
+            </recepcionista>
+        </recepcionistas>
+    </empleados>
+
+    <!-- PACIENTES (Incluye Historia Médica) -->
+    <pacientes>
+        <paciente id_paciente="PAC01">
+            <cedula>V-22333444</cedula>
+            <nombre>Juan</nombre>
+            <apellido>Pérez</apellido>
+            <telefono>0416-5554433</telefono>
+            <email>jperez@gmail.com</email>
+            <direccion>Unare, Puerto Ordaz</direccion>
+            <fecha_nacimiento>1995-06-12</fecha_nacimiento>
+            <genero>M</genero>
+            <tipo_sangre>O+</tipo_sangre>
+            <historia_medica id_historia="HM01">
+                <fecha_creacion>2026-01-10</fecha_creacion>
+                <antecedentes>Hipertensión arterial familiar</antecedentes>
+                <alergias>
+                    <alergia id_alergia="ALG01">
+                        <nombre>Penicilina</nombre>
+                        <descripcion>Erupción cutánea grave</descripcion>
+                    </alergia>
+                </alergias>
+                <medicaciones>Ninguna actualmente</medicaciones>
+            </historia_medica>
+        </paciente>
+    </pacientes>
+
+    <!-- CITAS -->
+    <citas>
+        <cita id_cita="CIT01" paciente_ref="PAC01" medico_ref="EMP01" recepcionista_ref="EMP03">
+            <rango_cita>[2026-09-01 09:00:00, 2026-09-01 09:30:00]</rango_cita>
+            <consultorio>Consultorio 102</consultorio>
+            <estado>Programada</estado>
+        </cita>
+    </citas>
+
+    <!-- CONSULTAS MÉDICAS -->
+    <consultas>
+        <consulta id_consulta="CON01" paciente_ref="PAC01" medico_ref="EMP01" cita_ref="CIT01">
+            <fecha>2026-08-25T09:00:00</fecha>
+            <diagnostico>Prehipertensión leve</diagnostico>
+            <observaciones>Control en 3 meses y dieta baja en sodio</observaciones>
+            <costo>50.00</costo>
+            
+            <recetas>
+                <receta id_receta="REC01" medicamento_ref="MED01">
+                    <dosis>10mg</dosis>
+                    <frecuencia>Cada 24 horas</frecuencia>
+                    <duracion>30 días</duracion>
+                    <indicaciones>Tomar en el desayuno</indicaciones>
+                </receta>
+            </recetas>
+
+            <estudios>
+                <estudio id_estudio="EST01" laboratorista_ref="EMP02">
+                    <tipo>Perfil Lipídico</tipo>
+                    <fecha>2026-08-25</fecha>
+                    <resultados>
+                        <resultado id_resultado="RES01">
+                            <descripcion>Muestra procesada en analizador automático</descripcion>
+                            <archivo_multimedia>resultados_perfil_lipidico_PAC01.pdf</archivo_multimedia>
+                        </resultado>
+                    </resultados>
+                </estudio>
+            </estudios>
+        </consulta>
+    </consultas>
+
+</clinica>
