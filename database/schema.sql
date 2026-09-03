@@ -5,7 +5,6 @@ CREATE TABLE Persona (
     telefono VARCHAR(20),
     email VARCHAR(150) UNIQUE,
     direccion VARCHAR(255),
-    fecha_registro TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Paciente (
