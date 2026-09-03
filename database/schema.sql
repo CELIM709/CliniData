@@ -5,41 +5,29 @@ CREATE TABLE Persona (
     fecha_nacimiento DATE NOT NULL,  -- ejemplo: '1990-09-01'
     telefono VARCHAR(20),
     email VARCHAR(150) UNIQUE,
-    direccion VARCHAR(255),
+    genero CHAR(1) CHECK (genero IN ('M', 'F')),
+    tipo_sangre VARCHAR(5),
+    direccion VARCHAR(255)
 );
 
 CREATE TABLE Paciente (
     cedula VARCHAR(20) PRIMARY KEY,
-    genero CHAR(1) CHECK (genero IN ('M', 'F')),
-    tipo_sangre VARCHAR(5),
 
     CONSTRAINT fk_paciente_persona
         FOREIGN KEY (cedula)
         REFERENCES Persona(cedula) ON DELETE CASCADE
 );
 
-CREATE TABLE Horario (
-    id_horario INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    dias VARCHAR(100) NOT NULL,  -- ejemplo: 'Lunes a Viernes', 'Sabado y Domingo'
-    hora_entrada TIME NOT NULL,
-    hora_salida TIME NOT NULL
-);
 
 CREATE TABLE Empleado (
     cedula VARCHAR(20) PRIMARY KEY,
-    salario NUMERIC(10,2) NOT NULL,
-    fecha_contratado DATE NOT NULL,
     clave_acceso VARCHAR(255) NOT NULL,
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('MEDICO', 'RECEPCIONISTA', 'LABORATORISTA', 'ADMIN')),
-    id_horario INTEGER NOT NULL,
 
     CONSTRAINT fk_empleado_persona
         FOREIGN KEY (cedula)
-        REFERENCES Persona(cedula) ON DELETE CASCADE,
+        REFERENCES Persona(cedula) ON DELETE CASCADE
 
-    CONSTRAINT fk_empleado_horario
-        FOREIGN KEY (id_horario)
-        REFERENCES Horario(id_horario) ON UPDATE CASCADE
 );
 
 CREATE TABLE Especialidad (
@@ -71,33 +59,6 @@ CREATE TABLE Medico_Especialidad (
         REFERENCES Especialidad(id_especialidad)
 );
 
-CREATE TABLE Laboratorista (
-    cedula VARCHAR(20) PRIMARY KEY,
-    carnet_bioanalista VARCHAR(50) NOT NULL UNIQUE,
-    area VARCHAR(100) NOT NULL, -- Conviene solo texto
-
-    CONSTRAINT fk_laboratorista_empleado
-        FOREIGN KEY (cedula)
-        REFERENCES Empleado(cedula) ON DELETE CASCADE
-);
-
-CREATE TABLE recepcionista (
-    cedula VARCHAR(20) PRIMARY KEY,
-    estacion_trabajo VARCHAR(50) NOT NULL,
-    extension_tlf VARCHAR(10) NOT NULL,
-
-    CONSTRAINT fk_recepcionista_empleado
-        FOREIGN KEY (cedula)
-        REFERENCES Empleado(cedula) ON DELETE CASCADE
-);
-
-CREATE TABLE Administrador (
-    cedula VARCHAR(20) PRIMARY KEY,
-    
-    CONSTRAINT fk_administrador_empleado
-        FOREIGN KEY (cedula)
-        REFERENCES Empleado(cedula) ON DELETE CASCADE
-);
 
 CREATE TABLE Historia_medica (
     cedula_paciente VARCHAR(20) PRIMARY KEY, -- PK y FK  (una historia medica por paciente)
@@ -136,7 +97,7 @@ CREATE TABLE Cita (
         EXCLUDE USING gist (
             cedula_medico WITH =,
             rango_cita WITH &&
-        ) WHERE (estado != 'CANCELADA')
+        ) WHERE (estado != 'CANCELADA'),
 
     CONSTRAINT no_solapar_citas_paciente
         EXCLUDE USING gist (
@@ -185,7 +146,7 @@ CREATE TABLE Estudio (
 
     CONSTRAINT fk_estudio_laboratorista
         FOREIGN KEY (laboratorista)
-        REFERENCES Laboratorista(cedula) ON DELETE SET NULL ON UPDATE CASCADE
+        REFERENCES Empleado(cedula) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 CREATE TABLE Resultado (
@@ -215,8 +176,9 @@ CREATE TABLE receta (
     dosis VARCHAR(100) NOT NULL,        
     frecuencia VARCHAR(100) NOT NULL,   
     duracion VARCHAR(100) NOT NULL,     
-    indicaciones TEXT,   -- opcional
+    indicaciones TEXT,                  -- opcional
 
+    -- Relaciones esenciales
     id_consulta INT NOT NULL,
     id_medicamento INT NOT NULL,
 
