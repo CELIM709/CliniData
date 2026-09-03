@@ -18,11 +18,18 @@ CREATE TABLE Paciente (
         REFERENCES Persona(cedula) ON DELETE CASCADE
 );
 
+CREATE TABLE Horario (
+    id_horario INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    dias VARCHAR(100) NOT NULL,  -- ejemplo: 'Lunes a Viernes', 'Sabado y Domingo'
+    hora_entrada TIME NOT NULL,
+    hora_salida TIME NOT NULL
+);
 
 CREATE TABLE Empleado (
     cedula VARCHAR(20) PRIMARY KEY,
     clave_acceso VARCHAR(255) NOT NULL,
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('MEDICO', 'RECEPCIONISTA', 'LABORATORISTA', 'ADMIN')),
+    id_horario INTEGER NOT NULL,
 
     CONSTRAINT fk_empleado_persona
         FOREIGN KEY (cedula)
