@@ -33,7 +33,11 @@ CREATE TABLE Empleado (
 
     CONSTRAINT fk_empleado_persona
         FOREIGN KEY (cedula)
-        REFERENCES Persona(cedula) ON DELETE CASCADE
+        REFERENCES Persona(cedula) ON DELETE CASCADE,
+
+    CONSTRAINT fk_empleado_horario
+        FOREIGN KEY (id_horario)
+        REFERENCES Horario(id_horario) ON UPDATE CASCADE
 
 );
 
