@@ -25,6 +25,9 @@ CREATE TABLE Horario (
     hora_salida TIME NOT NULL
 );
 
+
+-- NOTA: Quite las subclases por las quejas de las herencias. pero es necesario o mas facil la vida, dejar entidad Empleado y Paciente. Solo los empleados se diferenciarán por roles. 
+-- Asi evitamos crear multiroles, tamblas intermedias, identificaciones herradas...
 CREATE TABLE Empleado (
     cedula VARCHAR(20) PRIMARY KEY,
     clave_acceso VARCHAR(255) NOT NULL,
@@ -173,6 +176,14 @@ CREATE TABLE Resultado (
         REFERENCES Estudio(id_estudio) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- No soy un experto en bases de datos, pero la profesora Maria Herrera en BD1 siempre nos aconsejaba normalizar datos con identidad propia.
+-- Incluso ella nos dio un ejemplo que parecía innecesario, en un taller mecánico, ella creo el catalogo de Marcas.  Y si... si... EL TALLER MECANICO NO VENDE CARROS!
+-- EXISTEN INFINIDAD DE MARCAS, PERO AUN ASI, se agrega un catalogo de marcas para evitar malas consultas. por ejemplo:
+-- todos los Select carros Hyundai. ah pero y si un carro tiene Hiundai ? no va a aparecer.
+-- En nuestro caso, Select todas las consultas que contengan Acetaminofen, pero y si una receta dice Asetaminofen ?
+-- Esa no va a aparecer en la consulta. Ademas un medicamento es una entidad del dominio, tiene atributos tangibles.
+-- Muchas de las cosas que digo, vienen de TEC PRGOG III, estructura de datos, BD 1, y no creo que esos profesores esten errados.
+-- Sinceramente, desconfío más de una profesora que nunca ha dado la asignatura antes! 
 CREATE TABLE Medicamento (
     id_medicamento INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
