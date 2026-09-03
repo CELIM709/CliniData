@@ -2,6 +2,7 @@ CREATE TABLE Persona (
     cedula VARCHAR(20) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
+    fecha_nacimiento DATE NOT NULL,  -- ejemplo: '1990-09-01'
     telefono VARCHAR(20),
     email VARCHAR(150) UNIQUE,
     direccion VARCHAR(255),
@@ -9,7 +10,6 @@ CREATE TABLE Persona (
 
 CREATE TABLE Paciente (
     cedula VARCHAR(20) PRIMARY KEY,
-    fecha_nacimiento DATE NOT NULL,  -- ejemplo: '1990-09-01'
     genero CHAR(1) CHECK (genero IN ('M', 'F')),
     tipo_sangre VARCHAR(5),
 
