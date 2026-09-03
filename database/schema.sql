@@ -137,6 +137,13 @@ CREATE TABLE Cita (
             cedula_medico WITH =,
             rango_cita WITH &&
         ) WHERE (estado != 'CANCELADA')
+
+    CONSTRAINT no_solapar_citas_paciente
+        EXCLUDE USING gist (
+            cedula_paciente WITH =,
+            rango_cita WITH &&
+        )
+        WHERE (estado != 'CANCELADA')
 );
 
 CREATE TABLE Consulta (
