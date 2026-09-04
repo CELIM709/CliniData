@@ -10,10 +10,10 @@ INSERT INTO persona (cedula, nombre, apellido, fecha_nacimiento, telefono, email
 
 -- 2. Insertar Pacientes
 INSERT INTO paciente (cedula, genero, tipo_sangre) VALUES
-('V-87654321', 'MASCULINO', 'O+'),
-('V-20304050', 'MASCULINO', 'A+'),
-('V-25801947', 'FEMENINO', 'O-'),
-('V-30123456', 'MASCULINO', 'B+');
+('V-87654321', 'M', 'O+'),
+('V-20304050', 'M', 'A+'),
+('V-25801947', 'F', 'O-'),
+('V-30123456', 'M', 'B+');
 
 -- 3. Insertar Horarios
 INSERT INTO horario (dias, hora_entrada, hora_salida) VALUES
@@ -22,12 +22,13 @@ INSERT INTO horario (dias, hora_entrada, hora_salida) VALUES
 ('Sábados y Domingos', '08:00:00', '16:00:00');
 
 -- 4. Insertar Empleados
+-- Nota: este hash lo genere con php, ver archivo generarHash.php
 INSERT INTO empleado (cedula, salario, fecha_contratado, clave_acceso, rol, id_horario) VALUES
-('V-10111222', 1200.00, '2020-01-15', '$2b$12$eImiTXuWVxfM37uY4JANjO...', 'MEDICO', 1),
-('V-12345678', 1150.00, '2021-06-01', '$2b$12$eImiTXuWVxfM37uY4JANjO...', 'MEDICO', 1),
-('V-15975310', 600.00,  '2022-03-10', '$2b$12$eImiTXuWVxfM37uY4JANjO...', 'RECEPCIONISTA', 2),
-('V-20304050', 700.00,  '2023-02-01', '$2b$12$eImiTXuWVxfM37uY4JANjO...', 'LABORATORISTA', 1),
-('V-30123456', 900.00,  '2019-11-20', '$2b$12$eImiTXuWVxfM37uY4JANjO...', 'ADMINISTRADOR', 1);
+('V-10111222', 1200.00, '2020-01-15', '$2y$12$iVsRNQgnH3lWmSqs0xvrBedvWfoj0TOjxJC.lnqC59khHJKmJYCBy', 'MEDICO', 1),
+('V-12345678', 1150.00, '2021-06-01', '$2y$12$iVsRNQgnH3lWmSqs0xvrBedvWfoj0TOjxJC.lnqC59khHJKmJYCBy', 'MEDICO', 1),
+('V-15975310', 600.00,  '2022-03-10', '$2y$12$iVsRNQgnH3lWmSqs0xvrBedvWfoj0TOjxJC.lnqC59khHJKmJYCBy', 'RECEPCIONISTA', 2),
+('V-20304050', 700.00,  '2023-02-01', '$2y$12$iVsRNQgnH3lWmSqs0xvrBedvWfoj0TOjxJC.lnqC59khHJKmJYCBy', 'LABORATORISTA', 1),
+('V-30123456', 900.00,  '2019-11-20', '$2y$12$iVsRNQgnH3lWmSqs0xvrBedvWfoj0TOjxJC.lnqC59khHJKmJYCBy', 'ADMIN', 1);
 
 -- 5. Subclases de Empleados
 INSERT INTO administrador (cedula) VALUES

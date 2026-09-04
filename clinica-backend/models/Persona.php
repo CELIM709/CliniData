@@ -26,8 +26,8 @@ class Persona {
 
     // Registrar una nueva persona
     public function crear($datos) {
-        $sql = "INSERT INTO persona (cedula, nombre, apellido, fecha_nacimiento, telefono, email, genero, tipo_sangre, direccion)
-                VALUES (:cedula, :nombre, :apellido, :fecha_nacimiento, :telefono, :email, :genero, :tipo_sangre, :direccion)";
+        $sql = "INSERT INTO persona (cedula, nombre, apellido, fecha_nacimiento, telefono, email, direccion)
+                VALUES (:cedula, :nombre, :apellido, :fecha_nacimiento, :telefono, :email, :direccion)";
         
         $stmt = $this->db->prepare($sql);
 
@@ -38,8 +38,6 @@ class Persona {
             ':fecha_nacimiento' => $datos['fecha_nacimiento'],
             ':telefono'         => $datos['telefono'] ?? null,
             ':email'            => $datos['email'] ?? null,
-            ':genero'           => $datos['genero'] ?? null,
-            ':tipo_sangre'      => $datos['tipo_sangre'] ?? null,
             ':direccion'        => $datos['direccion'] ?? null
         ]);
     }

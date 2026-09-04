@@ -4,16 +4,16 @@ CREATE TABLE persona (
     cedula VARCHAR(20) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
-    fecha_nacimiento DATE NOT NULL,
+    fecha_nacimiento DATE NOT NULL,   -- ejemplo: '1990-09-01'
     telefono VARCHAR(20),
-    email VARCHAR(150),
+    email VARCHAR(150) UNIQUE,
     direccion VARCHAR(255)
 );
 
 -- 2. Tabla Paciente (Hereda / Especialización de Persona)
 CREATE TABLE paciente (
     cedula VARCHAR(20) PRIMARY KEY,
-    genero VARCHAR(20) NOT NULL,
+    genero CHAR(1) NOT NULL CHECK (genero IN ('M', 'F')),
     tipo_sangre VARCHAR(10) NOT NULL,
     CONSTRAINT fk_paciente_persona 
         FOREIGN KEY (cedula) REFERENCES persona(cedula) ON DELETE CASCADE
@@ -22,7 +22,7 @@ CREATE TABLE paciente (
 -- 3. Tabla Horario
 CREATE TABLE horario (
     id_horario INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    dias VARCHAR(100) NOT NULL,
+    dias VARCHAR(100) NOT NULL,  -- ejemplo: 'Lunes a Viernes', 'Sabado y Domingo'
     hora_entrada TIME NOT NULL,
     hora_salida TIME NOT NULL
 );
@@ -33,7 +33,7 @@ CREATE TABLE empleado (
     salario NUMERIC(10, 2) NOT NULL,
     fecha_contratado DATE NOT NULL,
     clave_acceso VARCHAR(255) NOT NULL,
-    rol VARCHAR(50) NOT NULL,
+    rol VARCHAR(50) NOT NULL CHECK (rol IN ('MEDICO', 'RECEPCIONISTA', 'LABORATORISTA', 'ADMIN')),
     id_horario INT NOT NULL,
     CONSTRAINT fk_empleado_persona 
         FOREIGN KEY (cedula) REFERENCES persona(cedula) ON DELETE CASCADE,
@@ -67,7 +67,7 @@ CREATE TABLE laboratorista (
 
 CREATE TABLE medico (
     cedula VARCHAR(20) PRIMARY KEY,
-    carnet_medico VARCHAR(50) NOT NULL,
+    carnet_medico VARCHAR(50) NOT NULL UNIQUE,
     tarifa NUMERIC(10, 2) NOT NULL,
     CONSTRAINT fk_medico_empleado 
         FOREIGN KEY (cedula) REFERENCES empleado(cedula) ON DELETE CASCADE
@@ -76,7 +76,7 @@ CREATE TABLE medico (
 -- 6. Especialidad y relación M:N con Medico
 CREATE TABLE especialidad (
     id_especialidad INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
     descripcion TEXT
 );
 
@@ -92,7 +92,7 @@ CREATE TABLE medico_especialidad (
 
 -- 7. Historia Médica
 CREATE TABLE historia_medica (
-    cedula_paciente VARCHAR(20) PRIMARY KEY,
+    cedula_paciente VARCHAR(20) PRIMARY KEY,  -- PK y FK  (una historia medica por paciente)
     fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     antecedentes TEXT,
     alergias TEXT,
@@ -106,7 +106,7 @@ CREATE TABLE cita (
     id_cita INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     rango_cita TSRANGE NOT NULL,
     consultorio VARCHAR(50) NOT NULL,
-    estado VARCHAR(20) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'CONFIRMADA', 'CANCELADA')),
     cedula_medico VARCHAR(20) NOT NULL,
     cedula_paciente VARCHAR(20) NOT NULL,
     CONSTRAINT fk_cita_medico 
@@ -119,7 +119,15 @@ CREATE TABLE cita (
         EXCLUDE USING gist (
             cedula_medico WITH =,
             rango_cita WITH &&
-        ) WHERE (estado != 'CANCELADA')
+        ) WHERE (estado != 'CANCELADA'),
+
+    -- Esto Tambien tiene que estar no entiendo por que se elimino.
+    CONSTRAINT no_solapar_citas_paciente
+        EXCLUDE USING gist (
+            cedula_paciente WITH =,
+            rango_cita WITH &&
+        )
+        WHERE (estado != 'CANCELADA')
 );
 
 -- 9. Consulta
@@ -131,7 +139,7 @@ CREATE TABLE consulta (
     costo NUMERIC(10, 2) NOT NULL,
     cedula_paciente VARCHAR(20) NOT NULL,
     cedula_medico VARCHAR(20) NOT NULL,
-    id_cita INT,
+    id_cita INT UNIQUE,   -- Aseegura una sola cita por consulta.
     CONSTRAINT fk_consulta_paciente 
         FOREIGN KEY (cedula_paciente) REFERENCES paciente(cedula),
     CONSTRAINT fk_consulta_medico 
@@ -158,7 +166,7 @@ CREATE TABLE estudio (
 CREATE TABLE resultado (
     id_resultado INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     descripcion TEXT,
-    ruta_archivo VARCHAR(255) NOT NULL,
+    ruta_archivo VARCHAR(255) NOT NULL,  -- Opcion 1: guardar la ruta del arcchivo, Opcion 2 usar tipo BYTEA pero seria mas pesada la BD
     fecha TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     id_estudio INT NOT NULL,
     CONSTRAINT fk_resultado_estudio 
@@ -170,7 +178,10 @@ CREATE TABLE medicamento (
     id_medicamento INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     laboratorio VARCHAR(100) NOT NULL,
-    presentacion VARCHAR(100) NOT NULL
+    presentacion VARCHAR(100) NOT NULL,
+
+    -- Evita duplicados, preferiblemente dejarlo.
+    CONSTRAINT no_duplicados UNIQUE (nombre, laboratorio, presentacion)
 );
 
 -- 13. Receta
