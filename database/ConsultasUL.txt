@@ -1,0 +1,92 @@
+-- ============================================================================
+-- PARTE II: Consultas SQL (DQL) para las Preguntas de Negocio 6 a 10
+-- Responsable: Aarom Luces
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 6: ¿Qué médicos pertenecen a una especialidad?
+-- Parámetro de ejemplo: id_especialidad = 1 (o por nombre 'Medicina General')
+-- ----------------------------------------------------------------------------
+SELECT 
+    p.cedula,
+    p.nombre,
+    p.apellido,
+    m.carnet_medico,
+    e.nombre AS especialidad
+FROM medico m
+JOIN persona p ON m.cedula = p.cedula
+JOIN medico_especialidad me ON m.cedula = me.cedula_medico
+JOIN especialidad e ON me.id_especialidad = e.id_especialidad
+WHERE e.id_especialidad = 1; -- Cambiar por el ID o filtro de especialidad deseado
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 7: ¿Qué pacientes tienen citas para hoy?
+-- Utiliza CURRENT_DATE para evaluar la fecha actual del sistema
+-- ----------------------------------------------------------------------------
+SELECT 
+    c.id_cita,
+    c.rango_cita,
+    c.consultorio,
+    c.estado,
+    p_pac.cedula AS cedula_paciente,
+    p_pac.nombre AS nombre_paciente,
+    p_pac.apellido AS apellido_paciente,
+    p_med.nombre AS nombre_medico,
+    p_med.apellido AS apellido_medico
+FROM cita c
+JOIN paciente pac ON c.cedula_paciente = pac.cedula
+JOIN persona p_pac ON pac.cedula = p_pac.cedula
+JOIN medico m ON c.cedula_medico = m.cedula
+JOIN persona p_med ON m.cedula = p_med.cedula
+WHERE DATE(lower(c.rango_cita)) = CURRENT_DATE
+  AND c.estado != 'CANCELADA';
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 8: ¿Cuál es el historial de consultas de un paciente?
+-- Parámetro de ejemplo: cedula_paciente = 'V-87654321'
+-- ----------------------------------------------------------------------------
+SELECT 
+    con.id_consulta,
+    con.fecha,
+    con.diagnostico,
+    con.observaciones,
+    con.costo,
+    p_med.nombre AS nombre_medico,
+    p_med.apellido AS apellido_medico
+FROM consulta con
+JOIN paciente pac ON con.cedula_paciente = pac.cedula
+JOIN medico m ON con.cedula_medico = m.cedula
+JOIN persona p_med ON m.cedula = p_med.cedula
+WHERE con.cedula_paciente = 'V-87654321' -- Reemplazar con la cédula a consultar
+ORDER BY con.fecha DESC;
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 9: ¿Qué estudios se han solicitado con mayor frecuencia?
+-- Ordena de mayor a menor según el conteo acumulado por tipo de estudio
+-- ----------------------------------------------------------------------------
+SELECT 
+    tipo AS tipo_estudio,
+    COUNT(*) AS total_solicitados
+FROM estudio
+GROUP BY tipo
+ORDER BY total_solicitados DESC;
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 10: ¿Qué médicos tienen mayor cantidad de citas agendadas?
+-- Agrupa por médico y cuenta las citas activas/totales
+-- ----------------------------------------------------------------------------
+SELECT 
+    m.cedula AS cedula_medico,
+    p.nombre,
+    p.apellido,
+    m.carnet_medico,
+    COUNT(c.id_cita) AS total_citas
+FROM medico m
+JOIN persona p ON m.cedula = p.cedula
+LEFT JOIN cita c ON m.cedula = c.cedula_medico AND c.estado != 'CANCELADA'
+GROUP BY m.cedula, p.nombre, p.apellido, m.carnet_medico
+ORDER BY total_citas DESC;
