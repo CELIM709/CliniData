@@ -141,7 +141,7 @@ CREATE TABLE consulta (
     cedula_medico VARCHAR(20) NOT NULL,
     id_cita INT UNIQUE,   -- Aseegura una sola cita por consulta.
     CONSTRAINT fk_consulta_paciente 
-        FOREIGN KEY (cedula_paciente) REFERENCES paciente(cedula),
+        FOREIGN KEY (cedula_paciente) REFERENCES paciente(cedula),  -- HistoriaMedica ya no esta ligada a consulta? bueno yo lo dejo asi.
     CONSTRAINT fk_consulta_medico 
         FOREIGN KEY (cedula_medico) REFERENCES medico(cedula),
     CONSTRAINT fk_consulta_cita 
@@ -153,7 +153,8 @@ CREATE TABLE estudio (
     id_estudio INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tipo VARCHAR(100) NOT NULL,
     fecha TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado VARCHAR(20) NOT NULL,
+    -- No entiendo por que quitaron los CHEKs, me di cuenta tarde y hay que alterar la BD
+    estado VARCHAR(20) NOT NULL  DEFAULT 'SOLICITADO' CHECK (estado IN ('SOLICITADO', 'REALIZADO', 'CANCELADO')),
     id_consulta INT NOT NULL,
     laboratorista VARCHAR(20),
     CONSTRAINT fk_estudio_consulta 

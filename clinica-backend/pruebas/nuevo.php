@@ -1,4 +1,6 @@
 <?php
+
+// Prueba para paciente con historia médica
 require_once __DIR__ . '/../config/Conexion.php';
 require_once __DIR__ . '/../models/Paciente.php';
 require_once __DIR__ . '/../models/HistoriaMedica.php';

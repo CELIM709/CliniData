@@ -125,4 +125,53 @@ class Cita {
         $stmt->execute([':cedula_paciente' => $cedula_paciente]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Obtener solo las citas PENDIENTES de un médico
+     */
+    public function obtenerPendientesPorMedico($cedula_medico) {
+        $sql = "SELECT c.id_cita,
+                       lower(c.rango_cita) AS fecha_inicio,
+                       upper(c.rango_cita) AS fecha_fin,
+                       c.consultorio, 
+                       c.estado,
+                       p.nombre AS paciente_nombre, 
+                       p.apellido AS paciente_apellido, 
+                       p.telefono AS paciente_telefono
+                FROM cita c
+                INNER JOIN paciente pac ON c.cedula_paciente = pac.cedula
+                INNER JOIN persona p ON pac.cedula = p.cedula
+                WHERE c.cedula_medico = :cedula_medico
+                  AND c.estado = 'PENDIENTE'
+                ORDER BY fecha_inicio ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':cedula_medico' => $cedula_medico]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Obtener solo las citas PENDIENTES de un paciente
+     */
+    public function obtenerPendientesPorPaciente($cedula_paciente) {
+        $sql = "SELECT c.id_cita,
+                       lower(c.rango_cita) AS fecha_inicio,
+                       upper(c.rango_cita) AS fecha_fin,
+                       c.consultorio, 
+                       c.estado,
+                       p.nombre AS medico_nombre, 
+                       p.apellido AS medico_apellido,
+                       p.telefono AS medico_telefono
+                FROM cita c
+                INNER JOIN medico m ON c.cedula_medico = m.cedula
+                INNER JOIN empleado e ON m.cedula = e.cedula
+                INNER JOIN persona p ON e.cedula = p.cedula
+                WHERE c.cedula_paciente = :cedula_paciente
+                  AND c.estado = 'PENDIENTE'
+                ORDER BY fecha_inicio ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':cedula_paciente' => $cedula_paciente]);
+        return $stmt->fetchAll();
+    }
 }

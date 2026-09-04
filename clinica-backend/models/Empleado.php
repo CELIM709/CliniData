@@ -119,14 +119,14 @@ class Empleado {
     /**
      * Autenticar Empleado (Para Login)
      */
-    public function login($cedula, $clave) {
+    public function login($identificador, $clave) {
         $sql = "SELECT e.cedula, e.clave_acceso, e.rol, p.nombre, p.apellido, p.email
                 FROM empleado e
                 INNER JOIN persona p ON e.cedula = p.cedula
-                WHERE e.cedula = :cedula";
+                WHERE (e.cedula = :identificador OR p.email = :identificador)";
                 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':cedula' => $cedula]);
+        $stmt->execute([':identificador' => $identificador]);
         $empleado = $stmt->fetch();
 
         // Verificar la contraseña ingresada contra el hash guardado en PostgreSQL
@@ -152,5 +152,15 @@ class Empleado {
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
+    }
+
+    // Ejemplo de método para un futuro Dashboard.php
+    public function obtenerEstadisticasGenerales() {
+        return [
+            'total_pacientes'    => $db->query("SELECT COUNT(*) FROM paciente")->fetchColumn(),
+            'citas_hoy'          => $db->query("SELECT COUNT(*) FROM cita WHERE lower(rango_cita)::date = CURRENT_DATE")->fetchColumn(),
+            'consultas_mes'      => $db->query("SELECT COUNT(*) FROM consulta WHERE date_trunc('month', fecha) = date_trunc('month', CURRENT_DATE)")->fetchColumn(),
+            'estudios_pendientes'=> $db->query("SELECT COUNT(*) FROM estudio WHERE estado = 'SOLICITADO'")->fetchColumn()
+        ];
     }
 }
