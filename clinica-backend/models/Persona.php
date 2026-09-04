@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/Conexion.php';
-
-class PersonaModel {
+// Persona o PersonaModel en un futuro
+class Persona {
     private $db;
 
     public function __construct() {
