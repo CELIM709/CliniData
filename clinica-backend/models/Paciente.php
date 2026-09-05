@@ -1,11 +1,14 @@
 <?php
 require_once __DIR__ . '/../config/Conexion.php';
+require_once __DIR__ . '/Persona.php';
 
 class Paciente {
     private $db;
+    private $personaModel;
 
     public function __construct() {
         $this->db = Conexion::conectar();
+        $this->personaModel = new Persona();
     }
 
     // En models/Paciente.php
@@ -89,34 +92,42 @@ class Paciente {
         return $stmt->fetchAll();
     }
 
-    // Obtener un solo paciente por su cédula (combinando datos personales y clínicos)
     public function obtenerPorCedula($cedula) {
         $sql = "SELECT p.cedula, p.nombre, p.apellido, p.fecha_nacimiento, p.telefono, p.email, p.direccion,
-                    pac.genero, pac.tipo_sangre
+                    pac.genero, pac.tipo_sangre,
+                    hm.antecedentes, hm.alergias, hm.medicacion_habitual
                 FROM paciente pac
                 INNER JOIN persona p ON pac.cedula = p.cedula
+                LEFT JOIN historia_medica hm ON pac.cedula = hm.cedula_paciente
                 WHERE pac.cedula = :cedula";
                 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':cedula' => $cedula]);
         
-        return $stmt->fetch(); // Devuelve un único arreglo con los datos (o false si no existe)
+        return $stmt->fetch();
     }
 
-    // Actualizar datos específicos del paciente
-    public function actualizarPaciente($cedula, $datosPaciente) {
-        $sql = "UPDATE paciente 
-                SET genero = :genero, 
-                    tipo_sangre = :tipo_sangre 
-                WHERE cedula = :cedula";
-                
-        $stmt = $this->db->prepare($sql);
+    public function actualizarPaciente($cedula, $datosPersona = [], $datosPaciente = []) {
+        try {
+            $this->db->beginTransaction();
 
-        return $stmt->execute([
-            ':cedula'      => $cedula,
-            ':genero'      => $datosPaciente['genero'],
-            ':tipo_sangre' => $datosPaciente['tipo_sangre']
-        ]);
+            // Si se enviaron datos personales (nombre, teléfono, email, etc.)
+            if (!empty($datosPersona)) {
+                $this->personaModel->actualizarParcial($cedula, $datosPersona);
+            }
+
+            // Si se enviaron datos específicos de paciente (género, tipo_sangre)
+            if (!empty($datosPaciente)) {
+                $this->actualizarParcial($cedula, $datosPaciente);
+            }
+
+            $this->db->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     public function actualizarParcial($cedula, $datosPaciente) {

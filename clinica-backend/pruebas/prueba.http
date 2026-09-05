@@ -1,0 +1,8 @@
+POST http://localhost:8000/api/especialidades.php
+Content-Type: application/json
+// nota: quite las verificaciones de autorización de sesión al probar esto.
+{
+    "action": "crear",
+    "nombre": "Neurología",
+    "descripcion": "Sistema nervioso"
+}

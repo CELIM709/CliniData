@@ -8,6 +8,15 @@ class Medicamento {
         $this->db = Conexion::conectar();
     }
 
+    public function obtenerTodos() {
+        $sql = "SELECT id_medicamento, nombre, laboratorio, presentacion 
+                FROM medicamento 
+                ORDER BY nombre ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function registrar($nombre, $laboratorio, $presentacion) {
         $sql = "INSERT INTO medicamento (nombre, laboratorio, presentacion) 
                 VALUES (:nombre, :laboratorio, :presentacion) 
