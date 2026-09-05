@@ -163,7 +163,7 @@ CREATE TABLE estudio (
     id_consulta INT NOT NULL,
     laboratorista VARCHAR(20),
     CONSTRAINT fk_estudio_tipo 
-        FOREIGN KEY (id_tipo_estudio) REFERENCES tipo_estudio(id_tipo_estudio) ON DELETE CASCADE,
+        FOREIGN KEY (id_tipo_estudio) REFERENCES tipo_estudio(id_tipo_estudio),
     CONSTRAINT fk_estudio_consulta 
         FOREIGN KEY (id_consulta) REFERENCES consulta(id_consulta) ON DELETE CASCADE,
     CONSTRAINT fk_estudio_laboratorista 
