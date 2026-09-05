@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CliniData - Inicio</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="landing-header">
+        <div class="landing-logo">
+            <img src="images/logoclinidata.png" alt="CliniData Logo">
+        </div>
+        <nav class="landing-nav">
+            <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')">🌓</button>
+            <a href="views/login.html" class="btn btn-outline">Acceso Personal</a>
+        </nav>
+    </header>
+
+    <main class="hero-section">
+        <!-- Carrusel automático (solo CSS) -->
+        <div class="carousel-bg">
+            <div class="carousel-slide"></div>
+            <div class="carousel-slide"></div>
+            <div class="carousel-slide"></div>
+        </div>
+        <div class="hero-overlay"></div>
+
+        <div class="hero-content">
+            <h1>Tu salud en las mejores manos</h1>
+            <p>Conecta con nuestros especialistas médicos de forma rápida y segura. Consulta tus resultados o el estado de tu cita al instante.</p>
+            <div class="hero-buttons">
+                <!-- Enlaces conceptuales para pacientes -->
+                <a href="#citas" class="btn btn-primary">Consultar Citas</a>
+                <a href="#resultados" class="btn btn-outline" style="color: #fff; border-color: #fff;">Ver Resultados</a>
+            </div>
+        </div>
+    </main>
+
+    <main class="main-content" style="max-width: 800px; margin: 40px auto; padding: 20px;">
+        <section id="citas" class="card">
+            <h3 class="card-title">Consultar Mis Citas</h3>
+            <p style="color:var(--text-muted); margin-bottom:20px;">
+                Ingresa tu cédula y fecha de nacimiento para ver tus próximas citas médicas.
+            </p>
+
+            <div id="alerta-citas" class="alert-box hidden"></div>
+
+            <form id="form-consultar-citas">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="citas_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="citas_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="citas_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
+                        </div>
+                        <small id="citas_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos.
+                        </small>
+                        <input type="hidden" id="citas_cedula" name="cedula">
+                    </div>
+                    <div class="form-group">
+                        <label for="citas_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="citas_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-actions" style="justify-content:flex-start;">
+                    <button type="submit" class="btn btn-primary">Buscar Mis Citas</button>
+                </div>
+            </form>
+
+            
+            <div id="resultado-citas" class="hidden" style="margin-top:20px;">
+            </div>
+        </section>
+
+        <section id="resultados" class="card" style="margin-top: 40px;">
+            <h3 class="card-title">Ver Resultados Médicos</h3>
+            <p style="color:var(--text-muted); margin-bottom:20px;">
+                Ingresa tu cédula y fecha de nacimiento para ver tus resultados de estudios.
+            </p>
+
+            <form id="form-consultar-resultados">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="resultados_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="resultados_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="resultados_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
+                        </div>
+                        <small id="resultados_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos.
+                        </small>
+                        <input type="hidden" id="resultados_cedula" name="cedula">
+                    </div>
+                    <div class="form-group">
+                        <label for="resultados_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="resultados_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-actions" style="justify-content:flex-start;">
+                    <button type="submit" class="btn btn-primary">Ver Mis Resultados</button>
+                </div>
+            </form>
+
+            <div id="resultado-examenes" class="hidden" style="margin-top:20px;">
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function combinarCedula(idLetra, idNumero, idOculto) {
+            const letra = document.getElementById(idLetra);
+            const numero = document.getElementById(idNumero);
+            const oculto = document.getElementById(idOculto);
+            if (letra && numero && oculto) {
+                const actualizar = () => { oculto.value = numero.value ? `${letra.value}-${numero.value}` : ''; };
+                letra.addEventListener('change', actualizar);
+                numero.addEventListener('input', actualizar);
+            }
+        }
+        
+        function mostrarErrorCedula(idNumero, idError) {
+            const input = document.getElementById(idNumero);
+            const error = document.getElementById(idError);
+            if (input && error) {
+                input.addEventListener('invalid', (e) => {
+                    e.preventDefault();
+                    error.classList.remove('hidden');
+                });
+                input.addEventListener('input', () => {
+                    error.classList.add('hidden');
+                });
+            }
+        }
+
+        function soloNumeros(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('keypress', (e) => {
+                    if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+                });
+            }
+        }
+
+        // Inicializar cédulas
+        combinarCedula('citas_cedula_letra', 'citas_cedula_numero', 'citas_cedula');
+        mostrarErrorCedula('citas_cedula_numero', 'citas_cedula_error');
+        soloNumeros('citas_cedula_numero');
+
+        combinarCedula('resultados_cedula_letra', 'resultados_cedula_numero', 'resultados_cedula');
+        mostrarErrorCedula('resultados_cedula_numero', 'resultados_cedula_error');
+        soloNumeros('resultados_cedula_numero');
+
+        // Formularios
+        document.getElementById('form-consultar-citas').addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Buscar citas con:', document.getElementById('citas_cedula').value,
+                        document.getElementById('citas_fecha_nacimiento').value);
+            // TODO David: reemplazar por fetch() a consultar_citas_publico.php
+        });
+
+        document.getElementById('form-consultar-resultados').addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Buscar resultados con:', document.getElementById('resultados_cedula').value,
+                        document.getElementById('resultados_fecha_nacimiento').value);
+            // TODO David: reemplazar por fetch() a consultar_resultados_publico.php
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - CliniData</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- BARRA LATERAL -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="../images/logoclinidata.png" alt="CliniData Logo" class="brand-logo">
+        </div>
+        <ul class="sidebar-menu">
+            <li><a onclick="showSection('resumen-dashboard')" class="active" id="link-resumen-dashboard">Resumen</a></li>
+            <li><a onclick="showSection('recepcionista-registro')" id="link-recepcionista-registro">Registrar Recepcionista</a></li>
+            <li><a onclick="showSection('laboratorista-registro')" id="link-laboratorista-registro">Registrar Laboratorista</a></li>
+            <li><a onclick="showSection('medico-registro')" id="link-medico-registro">Registrar Médico</a></li>
+        </ul>
+        <div style="margin-top: auto;">
+            <a href="login.html" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Panel de Administración</h1>
+            <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Cambiar modo claro/oscuro" title="Cambiar tema">🌓</button>
+        </div>
+
+        <!-- SECCIÓN: RESUMEN -->
+        <section id="resumen-dashboard" class="card">
+            <h3 class="card-title">Resumen del Personal</h3>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h4>Recepcionistas</h4>
+                    <span class="number">--</span>
+                </div>
+                <div class="summary-card">
+                    <h4>Laboratoristas</h4>
+                    <span class="number">--</span>
+                </div>
+                <div class="summary-card">
+                    <h4>Médicos</h4>
+                    <span class="number">--</span>
+                </div>
+                <div class="summary-card">
+                    <h4>Total Empleados</h4>
+                    <span class="number">--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: REGISTRO DE RECEPCIONISTA -->
+        <section id="recepcionista-registro" class="card hidden">
+            <h3 class="card-title">Registrar Nueva Recepcionista</h3>
+            <form action="procesar_registro_recepcionista.php" method="POST">
+                <input type="hidden" name="rol" value="RECEPCIONISTA">
+
+                <!-- Datos de Persona -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rec_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="rec_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="rec_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
+                        </div>
+                        <small id="rec_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="rec_cedula" name="cedula">
+                    </div>
+                    <div class="form-group">
+                        <label for="rec_nombre">Nombre</label>
+                        <input type="text" id="rec_nombre" name="nombre" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                    <div class="form-group">
+                        <label for="rec_apellido">Apellido</label>
+                        <input type="text" id="rec_apellido" name="apellido" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rec_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="rec_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rec_telefono_numero">Teléfono</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="rec_telefono_prefijo" class="form-control" style="max-width:110px;">
+                                <option value="0424">0424</option>
+                                <option value="0414">0414</option>
+                                <option value="0412">0412</option>
+                                <option value="0422">0422</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                            </select>
+                            <input type="text" id="rec_telefono_numero" class="form-control"
+                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568">
+                        </div>
+                        <input type="hidden" id="rec_telefono" name="telefono">
+                    </div>
+                    <div class="form-group">
+                        <label for="rec_email">Correo Electrónico</label>
+                        <input type="email" id="rec_email" name="email" class="form-control" maxlength="150">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="rec_direccion">Dirección</label>
+                    <textarea id="rec_direccion" name="direccion" class="form-control" maxlength="255"></textarea>
+                </div>
+
+                <h3 class="card-title" style="font-size: 15px; margin-top: 10px;">Datos Laborales</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rec_salario">Salario</label>
+                        <input type="number" id="rec_salario" name="salario" class="form-control" required step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="rec_fecha_contratado">Fecha de Contratación</label>
+                        <input type="date" id="rec_fecha_contratado" name="fecha_contratado" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rec_id_horario">ID de Horario</label>
+                        <input type="number" id="rec_id_horario" name="id_horario" class="form-control" required placeholder="Ej: 1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="rec_clave_acceso">Contraseña de Acceso</label>
+                    <input type="password" id="rec_clave_acceso" name="clave_acceso" class="form-control" required placeholder="Contraseña temporal del sistema">
+                </div>
+
+                <h3 class="card-title" style="font-size: 15px; margin-top: 10px;">Datos de Recepcionista</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rec_estacion_trabajo">Estación de Trabajo</label>
+                        <input type="text" id="rec_estacion_trabajo" name="estacion_trabajo" class="form-control" maxlength="50" placeholder="Ej: Recepción Principal">
+                    </div>
+                    <div class="form-group">
+                        <label for="rec_extension_tlf_numero">Extensión Telefónica</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="rec_extension_tlf_prefijo" class="form-control" style="max-width:110px;">
+                                <option value="0424">0424</option>
+                                <option value="0414">0414</option>
+                                <option value="0412">0412</option>
+                                <option value="0422">0422</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                            </select>
+                            <input type="text" id="rec_extension_tlf_numero" class="form-control"
+                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568">
+                        </div>
+                        <input type="hidden" id="rec_extension_tlf" name="extension_tlf">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-outline">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Recepcionista</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: REGISTRO DE LABORATORISTA -->
+        <section id="laboratorista-registro" class="card hidden">
+            <h3 class="card-title">Registrar Nuevo Laboratorista</h3>
+            <form action="procesar_registro_laboratorista.php" method="POST">
+                <input type="hidden" name="rol" value="LABORATORISTA">
+
+                <!-- Datos de Persona -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lab_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="lab_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="lab_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
+                        </div>
+                        <small id="lab_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="lab_cedula" name="cedula">
+                    </div>
+                    <div class="form-group">
+                        <label for="lab_nombre">Nombre</label>
+                        <input type="text" id="lab_nombre" name="nombre" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                    <div class="form-group">
+                        <label for="lab_apellido">Apellido</label>
+                        <input type="text" id="lab_apellido" name="apellido" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lab_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="lab_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lab_telefono_numero">Teléfono</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="lab_telefono_prefijo" class="form-control" style="max-width:110px;">
+                                <option value="0424">0424</option>
+                                <option value="0414">0414</option>
+                                <option value="0412">0412</option>
+                                <option value="0422">0422</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                            </select>
+                            <input type="text" id="lab_telefono_numero" class="form-control"
+                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568">
+                        </div>
+                        <input type="hidden" id="lab_telefono" name="telefono">
+                    </div>
+                    <div class="form-group">
+                        <label for="lab_email">Correo Electrónico</label>
+                        <input type="email" id="lab_email" name="email" class="form-control" maxlength="150">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lab_direccion">Dirección</label>
+                    <textarea id="lab_direccion" name="direccion" class="form-control" maxlength="255"></textarea>
+                </div>
+
+                <h3 class="card-title" style="font-size: 15px; margin-top: 10px;">Datos Laborales</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lab_salario">Salario</label>
+                        <input type="number" id="lab_salario" name="salario" class="form-control" required step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="lab_fecha_contratado">Fecha de Contratación</label>
+                        <input type="date" id="lab_fecha_contratado" name="fecha_contratado" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lab_id_horario">ID de Horario</label>
+                        <input type="number" id="lab_id_horario" name="id_horario" class="form-control" required placeholder="Ej: 1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lab_clave_acceso">Contraseña de Acceso</label>
+                    <input type="password" id="lab_clave_acceso" name="clave_acceso" class="form-control" required placeholder="Contraseña temporal del sistema">
+                </div>
+
+                <h3 class="card-title" style="font-size: 15px; margin-top: 10px;">Datos de Laboratorista</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lab_carnet_bioanalista_numero">Carnet de Bioanalista</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span style="font-weight:bold; color:var(--text-color); font-size: 0.9rem;">M.P.P.S.</span>
+                            <input type="text" id="lab_carnet_bioanalista_numero" class="form-control" required maxlength="6" inputmode="numeric" pattern="\d{6}" title="Debe contener exactamente 6 números" placeholder="112345">
+                        </div>
+                        <input type="hidden" id="lab_carnet_bioanalista" name="carnet_bioanalista">
+                    </div>
+                    <div class="form-group">
+                        <label for="lab_area">Área</label>
+                        <input type="text" id="lab_area" name="area" class="form-control" maxlength="100" placeholder="Ej: Hematología">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-outline">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Laboratorista</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: REGISTRO DE MÉDICO -->
+        <section id="medico-registro" class="card hidden">
+            <h3 class="card-title">Registrar Nuevo Médico</h3>
+            <form action="procesar_registro_medico.php" method="POST">
+                <input type="hidden" name="rol" value="MEDICO">
+
+                <!-- Datos de Persona -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="med_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="med_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="med_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
+                        </div>
+                        <small id="med_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="med_cedula" name="cedula">
+                    </div>
+                    <div class="form-group">
+                        <label for="med_nombre">Nombre</label>
+                        <input type="text" id="med_nombre" name="nombre" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                    <div class="form-group">
+                        <label for="med_apellido">Apellido</label>
+                        <input type="text" id="med_apellido" name="apellido" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="med_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="med_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med_telefono_numero">Teléfono</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="med_telefono_prefijo" class="form-control" style="max-width:110px;">
+                                <option value="0424">0424</option>
+                                <option value="0414">0414</option>
+                                <option value="0412">0412</option>
+                                <option value="0422">0422</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                            </select>
+                            <input type="text" id="med_telefono_numero" class="form-control"
+                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568">
+                        </div>
+                        <input type="hidden" id="med_telefono" name="telefono">
+                    </div>
+                    <div class="form-group">
+                        <label for="med_email">Correo Electrónico</label>
+                        <input type="email" id="med_email" name="email" class="form-control" maxlength="150">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="med_direccion">Dirección</label>
+                    <textarea id="med_direccion" name="direccion" class="form-control" maxlength="255"></textarea>
+                </div>
+
+                <h3 class="card-title" style="font-size: 15px; margin-top: 10px;">Datos Laborales</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="med_salario">Salario</label>
+                        <input type="number" id="med_salario" name="salario" class="form-control" required step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="med_fecha_contratado">Fecha de Contratación</label>
+                        <input type="date" id="med_fecha_contratado" name="fecha_contratado" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med_id_horario">ID de Horario</label>
+                        <input type="number" id="med_id_horario" name="id_horario" class="form-control" required placeholder="Ej: 1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="med_clave_acceso">Contraseña de Acceso</label>
+                    <input type="password" id="med_clave_acceso" name="clave_acceso" class="form-control" required placeholder="Contraseña temporal del sistema">
+                </div>
+
+                <h3 class="card-title" style="font-size: 15px; margin-top: 10px;">Datos de Médico</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="med_carnet_medico_numero">Carnet Médico</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span style="font-weight:bold; color:var(--text-color); font-size: 0.9rem;">M.P.P.S.</span>
+                            <input type="text" id="med_carnet_medico_numero" class="form-control" required maxlength="6" inputmode="numeric" pattern="\d{6}" title="Debe contener exactamente 6 números" placeholder="112345">
+                        </div>
+                        <input type="hidden" id="med_carnet_medico" name="carnet_medico">
+                    </div>
+                    <div class="form-group">
+                        <label for="med_tarifa">Tarifa de Consulta</label>
+                        <input type="number" id="med_tarifa" name="tarifa" class="form-control" required step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="med_especialidades">Especialidad(es)</label>
+                    <select id="med_especialidades" name="especialidades[]" class="form-control" multiple required style="min-height: 120px;">
+                        <option value="1">Cardiología</option>
+                        <option value="2">Pediatría</option>
+                        <option value="3">Dermatología</option>
+                        <option value="4">Traumatología</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-outline">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Médico</button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+</div>
+
+<script>
+    function showSection(sectionId) {
+       
+        const sections = document.querySelectorAll('.main-content section');
+        sections.forEach(s => s.classList.add('hidden'));
+
+        const links = document.querySelectorAll('.sidebar-menu a');
+        links.forEach(l => l.classList.remove('active'));
+
+        document.getElementById(sectionId).classList.remove('hidden');
+        document.getElementById('link-' + sectionId).classList.add('active');
+    }
+
+    // Funciones de validación
+    function combinarCedula(idLetra, idNumero, idOculto) {
+        const letra = document.getElementById(idLetra);
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => { oculto.value = numero.value ? `${letra.value}-${numero.value}` : ''; };
+        letra.addEventListener('change', actualizar);
+        numero.addEventListener('input', actualizar);
+    }
+
+    function soloNumeros(id) {
+        document.getElementById(id).addEventListener('keypress', (e) => {
+            if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+        });
+    }
+
+    function soloLetras(id) {
+        document.getElementById(id).addEventListener('keypress', (e) => {
+            if (!/^[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]$/.test(e.key)) e.preventDefault();
+        });
+    }
+
+    function combinarTelefono(idPrefijo, idNumero, idOculto) {
+        const prefijo = document.getElementById(idPrefijo);
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => { oculto.value = numero.value ? `${prefijo.value}-${numero.value}` : ''; };
+        prefijo.addEventListener('change', actualizar);
+        numero.addEventListener('input', actualizar);
+    }
+
+    function combinarCarnet(idNumero, idOculto) {
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => { oculto.value = numero.value ? `M.P.P.S. ${numero.value}` : ''; };
+        numero.addEventListener('input', actualizar);
+    }
+
+    function mostrarErrorCedula(idNumero, idError) {
+        const input = document.getElementById(idNumero);
+        const error = document.getElementById(idError);
+        if (input && error) {
+            input.addEventListener('invalid', (e) => {
+                e.preventDefault();
+                error.classList.remove('hidden');
+            });
+            input.addEventListener('input', () => {
+                error.classList.add('hidden');
+            });
+        }
+    }
+
+    // Inicializar Recepcionista
+    combinarCedula('rec_cedula_letra', 'rec_cedula_numero', 'rec_cedula');
+    soloNumeros('rec_cedula_numero');
+    mostrarErrorCedula('rec_cedula_numero', 'rec_cedula_error');
+    soloLetras('rec_nombre');
+    soloLetras('rec_apellido');
+    combinarTelefono('rec_telefono_prefijo', 'rec_telefono_numero', 'rec_telefono');
+    soloNumeros('rec_telefono_numero');
+    combinarTelefono('rec_extension_tlf_prefijo', 'rec_extension_tlf_numero', 'rec_extension_tlf');
+    soloNumeros('rec_extension_tlf_numero');
+
+    // Inicializar Laboratorista
+    combinarCedula('lab_cedula_letra', 'lab_cedula_numero', 'lab_cedula');
+    soloNumeros('lab_cedula_numero');
+    mostrarErrorCedula('lab_cedula_numero', 'lab_cedula_error');
+    soloLetras('lab_nombre');
+    soloLetras('lab_apellido');
+    combinarTelefono('lab_telefono_prefijo', 'lab_telefono_numero', 'lab_telefono');
+    soloNumeros('lab_telefono_numero');
+    combinarCarnet('lab_carnet_bioanalista_numero', 'lab_carnet_bioanalista');
+    soloNumeros('lab_carnet_bioanalista_numero');
+
+    // Inicializar Médico
+    combinarCedula('med_cedula_letra', 'med_cedula_numero', 'med_cedula');
+    soloNumeros('med_cedula_numero');
+    mostrarErrorCedula('med_cedula_numero', 'med_cedula_error');
+    soloLetras('med_nombre');
+    soloLetras('med_apellido');
+    combinarTelefono('med_telefono_prefijo', 'med_telefono_numero', 'med_telefono');
+    soloNumeros('med_telefono_numero');
+    combinarCarnet('med_carnet_medico_numero', 'med_carnet_medico');
+    soloNumeros('med_carnet_medico_numero');
+</script>
+</body>
+</html>
