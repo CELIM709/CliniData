@@ -1,11 +1,18 @@
 -- ============================================================================
 -- PARTE II: Consultas SQL (DQL) para las Preguntas de Negocio 6 a 10
--- Responsable: Aarom Luces
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
 -- Pregunta 6: ¿Qué médicos pertenecen a una especialidad?
--- Parámetro de ejemplo: id_especialidad = 1 (o por nombre 'Medicina General')
+-- 
+-- Explicación Técnica:
+-- 1. Realiza una combinación de tablas (JOIN) entre 'medico', 'persona', 
+--    'medico_especialidad' y 'especialidad' para asociar los datos personales 
+--    del profesional con su respectiva área médica.
+-- 2. Utiliza la tabla intermedia 'medico_especialidad' para resolver la 
+--    relación de muchos a muchos (M:N) entre médicos y especialidades.
+-- 3. Aplica la cláusula WHERE para filtrar la búsqueda por una especialidad 
+--    específica mediante su clave primaria (id_especialidad).
 -- ----------------------------------------------------------------------------
 SELECT 
     p.cedula,
@@ -17,12 +24,22 @@ FROM medico m
 JOIN persona p ON m.cedula = p.cedula
 JOIN medico_especialidad me ON m.cedula = me.cedula_medico
 JOIN especialidad e ON me.id_especialidad = e.id_especialidad
-WHERE e.id_especialidad = 1; -- Cambiar por el ID o filtro de especialidad deseado
+WHERE e.id_especialidad = 1; -- Parámetro: ID de la especialidad a consultar
 
 
 -- ----------------------------------------------------------------------------
 -- Pregunta 7: ¿Qué pacientes tienen citas para hoy?
--- Utiliza CURRENT_DATE para evaluar la fecha actual del sistema
+-- 
+-- Explicación Técnica:
+-- 1. Relaciona la tabla 'cita' con 'paciente' y 'medico' (así como sus 
+--    respectivas tablas de datos personales 'persona') para obtener el contexto 
+--    completo del compromiso médico.
+-- 2. Utiliza la función lower(c.rango_cita) para extraer el límite inferior 
+--    (fecha y hora de inicio) del tipo de dato temporal TSRANGE.
+-- 3. Utiliza la función DATE() combinada con CURRENT_DATE para comparar 
+--    exclusivamente la fecha del día en curso con el servidor de PostgreSQL.
+-- 4. Excluye las citas con estado 'CANCELADA' para mostrar únicamente la 
+--    agenda operativa válida.
 -- ----------------------------------------------------------------------------
 SELECT 
     c.id_cita,
@@ -45,7 +62,14 @@ WHERE DATE(lower(c.rango_cita)) = CURRENT_DATE
 
 -- ----------------------------------------------------------------------------
 -- Pregunta 8: ¿Cuál es el historial de consultas de un paciente?
--- Parámetro de ejemplo: cedula_paciente = 'V-87654321'
+-- 
+-- Explicación Técnica:
+-- 1. Unifica la tabla 'consulta' con 'paciente', 'medico' y 'persona' para 
+--    desplegar la información clínica junto al médico tratante.
+-- 2. Aplica un filtro directo en la cláusula WHERE por la cédula del paciente 
+--    requerido.
+-- 3. Ordena cronológicamente mediante ORDER BY con la cláusula DESC para que 
+--    las consultas más recientes aparezcan en el primer lugar de la lista.
 -- ----------------------------------------------------------------------------
 SELECT 
     con.id_consulta,
@@ -59,25 +83,46 @@ FROM consulta con
 JOIN paciente pac ON con.cedula_paciente = pac.cedula
 JOIN medico m ON con.cedula_medico = m.cedula
 JOIN persona p_med ON m.cedula = p_med.cedula
-WHERE con.cedula_paciente = 'V-87654321' -- Reemplazar con la cédula a consultar
+WHERE con.cedula_paciente = 'V-87654321' -- Parámetro: Cédula del paciente
 ORDER BY con.fecha DESC;
 
 
 -- ----------------------------------------------------------------------------
 -- Pregunta 9: ¿Qué estudios se han solicitado con mayor frecuencia?
--- Ordena de mayor a menor según el conteo acumulado por tipo de estudio
+-- 
+-- Explicación Técnica:
+-- 1. Realiza un INNER JOIN entre la tabla de transacciones 'estudio' (e) y la 
+--    tabla catálogo 'tipo_estudio' (te) usando la clave foránea 'id_tipo_estudio'.
+-- 2. Agrupa los registros mediante GROUP BY basándose en la clave primaria 
+--    (te.id_tipo_estudio) y el nombre estandarizado (te.nombre_estudio), 
+--    eliminando problemas de inconsistencia por texto libre.
+-- 3. Emplea la función de agregación COUNT(e.id_estudio) para contabilizar el 
+--    volumen total de solicitudes efectuadas por examen.
+-- 4. Aplica ORDER BY DESC sobre el conteo para listar en orden decreciente 
+--    los exámenes de laboratorio más demandados.
 -- ----------------------------------------------------------------------------
 SELECT 
-    tipo AS tipo_estudio,
-    COUNT(*) AS total_solicitados
-FROM estudio
-GROUP BY tipo
+    te.id_tipo_estudio,
+    te.nombre_estudio,
+    COUNT(e.id_estudio) AS total_solicitados
+FROM estudio e
+JOIN tipo_estudio te ON e.id_tipo_estudio = te.id_tipo_estudio
+GROUP BY te.id_tipo_estudio, te.nombre_estudio
 ORDER BY total_solicitados DESC;
 
 
 -- ----------------------------------------------------------------------------
 -- Pregunta 10: ¿Qué médicos tienen mayor cantidad de citas agendadas?
--- Agrupa por médico y cuenta las citas activas/totales
+-- 
+-- Explicación Técnica:
+-- 1. Utiliza una combinación externa izquierda (LEFT JOIN) entre la tabla 
+--    'medico' y 'cita'. Esto garantiza que incluso los médicos sin citas 
+--    registradas aparezcan en el reporte estadístico con un conteo de cero.
+-- 2. Incluye en la condición de cruce (ON) el filtro c.estado != 'CANCELADA' 
+--    para asegurar que solo se contabilicen las citas activas o efectivas.
+-- 3. Agrupa por el identificador del médico y contabiliza los registros válidos 
+--    mediante COUNT(c.id_cita).
+-- 4. Ordena el resultado de mayor a menor (DESC) según la carga global de citas.
 -- ----------------------------------------------------------------------------
 SELECT 
     m.cedula AS cedula_medico,

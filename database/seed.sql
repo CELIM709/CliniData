@@ -72,10 +72,18 @@ INSERT INTO consulta (fecha, diagnostico, observaciones, costo, cedula_paciente,
 ('2026-09-10 08:25:00-04', 'Síndrome Febril Agudo / Cuadro gripal', 'Reposo por 3 días e hidratación abundante.', 40.00, 'V-87654321', 'V-10111222', 1),
 ('2026-09-10 09:20:00-04', 'Control Cardiovascular de Rutina', 'Presión arterial dentro de los límites normales (120/80).', 50.00, 'V-30123456', 'V-12345678', 3);
 
--- 10. Estudios de laboratorio indicados en la Consulta
-INSERT INTO estudio (tipo, fecha, estado, id_consulta, laboratorista) VALUES
-('Hematología Completa', '2026-09-10 08:35:00-04', 'REALIZADO', 1, 'V-20304050'),
-('Perfil Lipídico', '2026-09-10 09:35:00-04', 'SOLICITADO', 2, 'V-20304050');
+--  tipos de exámenes de laboratorio en el catálogo
+INSERT INTO tipo_estudio (nombre_estudio, descripcion) VALUES
+('Hemograma Completo', 'Conteo de células sanguíneas, hemoglobina y plaquetas'),
+('Química Sanguínea', 'Medición de glucosa, colesterol, triglicéridos, urea y creatinina'),
+('Perfil Hepático', 'Evaluación de enzimas del hígado (TGO, TGP, bilirrubina)'),
+('Uroanálisis y Coproanálisis', 'Examen de orina y heces para detectar infecciones o parásitos'),
+('Pruebas Hormonales e Inmunología', 'Evaluación de tiroides, hormonas, anticuerpos y serología');
+
+-- 10. Estudios de laboratorio 
+INSERT INTO estudio (id_tipo_estudio, fecha, estado, id_consulta, laboratorista) VALUES
+(1, '2026-09-10 08:35:00-04', 'REALIZADO', 1, 'V-20304050'),
+(2, '2026-09-10 09:35:00-04', 'SOLICITADO', 2, 'V-20304050');
 
 -- 11. Resultados de Estudios
 INSERT INTO resultado (descripcion, ruta_archivo, fecha, id_estudio) VALUES
