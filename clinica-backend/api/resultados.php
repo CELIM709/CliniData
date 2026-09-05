@@ -13,13 +13,11 @@ session_start();
 
 require_once __DIR__ . '/../models/Resultado.php';
 
-
-
 $resultadoModel = new Resultado();
 $metodo = $_SERVER['REQUEST_METHOD'];
 
-// 1. Identificar si es una consulta pública de un paciente (Método GET con el parámetro 'paciente')
-$esConsultaPublicaPaciente = ($metodo === 'GET' && isset($_GET['paciente']));
+// 1. Identificar si es una consulta pública 
+$esConsultaPublicaPaciente = ($metodo === 'GET');
 
 // 2. Validar sesión ÚNICAMENTE si NO es una consulta pública de paciente
 if (!$esConsultaPublicaPaciente && !isset($_SESSION['usuario'])) {
@@ -63,8 +61,22 @@ try {
                 break;
             }
 
+            // Opción 3: Obtener todos los resultados de un paciente (?paciente=Z)
+            if (isset($_GET['paciente'])) {
+                $cedulaPaciente = trim($_GET['paciente']);
+                if (empty($cedulaPaciente)) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'Cédula de paciente requerida.']);
+                    exit;
+                }
+
+                $resultados = $resultadoModel->obtenerPorPaciente($cedulaPaciente);
+                echo json_encode(['success' => true, 'data' => $resultados]);
+                break;
+            }
+
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Debe especificar "id_estudio" o "id_consulta".']);
+            echo json_encode(['success' => false, 'error' => 'Debe especificar "id_estudio", "id_consulta" o "paciente".']);
             break;
 
         

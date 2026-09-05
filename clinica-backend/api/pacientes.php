@@ -18,8 +18,8 @@ require_once __DIR__ . '/../models/Paciente.php';
 $pacienteModel = new Paciente();
 $metodo = $_SERVER['REQUEST_METHOD'];
 
-// 1. Identificar si es una consulta pública de un paciente (Método GET con el parámetro 'paciente')
-$esConsultaPublicaPaciente = ($metodo === 'GET' && isset($_GET['paciente']));
+// 1. Identificar si es una consulta pública 
+$esConsultaPublicaPaciente = ($metodo === 'GET' && isset($_GET['cedula']));
 
 // 2. Validar sesión ÚNICAMENTE si NO es una consulta pública de paciente
 if (!$esConsultaPublicaPaciente && !isset($_SESSION['usuario'])) {
@@ -33,6 +33,7 @@ try {
 
         // --- CONSULTAR PACIENTES ---
         case 'GET':
+            // ejemplo: http://localhost:8080/api/pacientes?cedula=CEDULA
             if (isset($_GET['cedula'])) {
                 $resultado = $pacienteModel->obtenerPorCedula($_GET['cedula']);
                 if (!$resultado) {

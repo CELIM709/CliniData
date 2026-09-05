@@ -33,6 +33,7 @@ try {
 
         // --- CONSULTAR CITAS ---
         case 'GET':
+            // consultar por medico, o porpaciente, por deferto solo pendientes
             $medico = $_GET['medico'] ?? null;
             $paciente = $_GET['paciente'] ?? null;
             $soloPendientes = isset($_GET['pendientes']) && $_GET['pendientes'] === 'true';

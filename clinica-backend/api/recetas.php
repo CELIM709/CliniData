@@ -13,12 +13,11 @@ session_start();
 
 require_once __DIR__ . '/../models/Receta.php';
 
-
 $recetaModel = new Receta();
 $metodo = $_SERVER['REQUEST_METHOD'];
 
-// 1. Identificar si es una consulta pública de un paciente (Método GET con el parámetro 'paciente')
-$esConsultaPublicaPaciente = ($metodo === 'GET' && isset($_GET['paciente']));
+// 1. Identificar si es una consulta pública de un paciente (Método GET con el parámetro 'paciente' o 'cedula_paciente')
+$esConsultaPublicaPaciente = ($metodo === 'GET');
 
 // 2. Validar sesión ÚNICAMENTE si NO es una consulta pública de paciente
 if (!$esConsultaPublicaPaciente && !isset($_SESSION['usuario'])) {
@@ -30,25 +29,57 @@ if (!$esConsultaPublicaPaciente && !isset($_SESSION['usuario'])) {
 try {
     switch ($metodo) {
 
-        // --- CONSULTAR RECETAS / RÉCIPE DE UNA CONSULTA ---
+        // --- CONSULTAR RECETAS / RÉCIPE ---
         case 'GET':
-            if (empty($_GET['id_consulta'])) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'error' => 'Se requiere el id_consulta.']);
-                exit;
+            // Opción 1: Obtener historial de recetas por médico (?cedula_medico=X o ?medico=X)
+            if (isset($_GET['cedula_medico']) || isset($_GET['medico'])) {
+                $cedulaMedico = trim($_GET['cedula_medico'] ?? $_GET['medico']);
+                if (empty($cedulaMedico)) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'Cédula de médico requerida.']);
+                    exit;
+                }
+
+                $resultado = $recetaModel->obtenerPorMedico($cedulaMedico);
+                echo json_encode(['success' => true, 'data' => $resultado]);
+                break;
             }
 
-            $idConsulta = $_GET['id_consulta'];
+            // Opción 2: Obtener historial de recetas por paciente (?cedula_paciente=X o ?paciente=X)
+            if (isset($_GET['cedula_paciente']) || isset($_GET['paciente'])) {
+                $cedulaPaciente = trim($_GET['cedula_paciente'] ?? $_GET['paciente']);
+                if (empty($cedulaPaciente)) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'Cédula de paciente requerida.']);
+                    exit;
+                }
 
-            // Si piden el formato completo para imprimir la receta
-            if (isset($_GET['impresion']) && $_GET['impresion'] === 'true') {
-                $resultado = $recetaModel->obtenerRecipeCompleto($idConsulta);
-            } else {
-                // Muestra solo el listado de medicamentos de la consulta
-                $resultado = $recetaModel->obtenerPorConsulta($idConsulta);
+                $resultado = $recetaModel->obtenerPorPaciente($cedulaPaciente);
+                echo json_encode(['success' => true, 'data' => $resultado]);
+                break;
             }
 
-            echo json_encode(['success' => true, 'data' => $resultado]);
+            // Opción 3: Obtener recetas de una consulta específica (?id_consulta=Y)
+            if (isset($_GET['id_consulta'])) {
+                $idConsulta = filter_var($_GET['id_consulta'], FILTER_VALIDATE_INT);
+                if (!$idConsulta) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'ID de consulta inválido.']);
+                    exit;
+                }
+
+                if (isset($_GET['impresion']) && $_GET['impresion'] === 'true') {
+                    $resultado = $recetaModel->obtenerRecipeCompleto($idConsulta);
+                } else {
+                    $resultado = $recetaModel->obtenerPorConsulta($idConsulta);
+                }
+
+                echo json_encode(['success' => true, 'data' => $resultado]);
+                break;
+            }
+
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Debe especificar "id_consulta", "cedula_paciente" o "cedula_medico".']);
             break;
 
         // --- REGISTRAR MEDICAMENTOS EN LOTE A UNA CONSULTA ---

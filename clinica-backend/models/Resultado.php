@@ -20,7 +20,7 @@ class Resultado {
         $stmt->execute([
             ':descripcion'  => $descripcion,
             ':ruta_archivo' => $ruta_archivo,
-            ':id_estudio'    => $id_estudio
+            ':id_estudio'   => $id_estudio
         ]);
 
         return $stmt->fetchColumn();
@@ -45,14 +45,34 @@ class Resultado {
      */
     public function obtenerPorConsulta($id_consulta) {
         $sql = "SELECT r.id_resultado, r.descripcion, r.ruta_archivo, r.fecha,
-                       e.id_estudio, e.tipo AS tipo_estudio, e.estado AS estado_estudio
+                       e.id_estudio, te.nombre_estudio AS tipo_estudio, e.estado AS estado_estudio
                 FROM resultado r
                 INNER JOIN estudio e ON r.id_estudio = e.id_estudio
+                INNER JOIN tipo_estudio te ON e.id_tipo_estudio = te.id_tipo_estudio
                 WHERE e.id_consulta = :id_consulta
                 ORDER BY r.fecha DESC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id_consulta' => $id_consulta]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Obtener todos los resultados de los exámenes de un paciente por su cédula
+     */
+    public function obtenerPorPaciente($cedula_paciente) {
+        $sql = "SELECT r.id_resultado, r.descripcion, r.ruta_archivo, r.fecha,
+                       e.id_estudio, te.nombre_estudio AS tipo_estudio, e.estado AS estado_estudio,
+                       c.id_consulta
+                FROM resultado r
+                INNER JOIN estudio e ON r.id_estudio = e.id_estudio
+                INNER JOIN tipo_estudio te ON e.id_tipo_estudio = te.id_tipo_estudio
+                INNER JOIN consulta c ON e.id_consulta = c.id_consulta
+                WHERE c.cedula_paciente = :cedula_paciente
+                ORDER BY r.fecha DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':cedula_paciente' => $cedula_paciente]);
         return $stmt->fetchAll();
     }
 

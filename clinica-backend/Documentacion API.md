@@ -1309,10 +1309,7 @@ ADMIN
 {
     "action": "solicitar",
     "id_consulta": 10,
-    "tipos": [
-        "Perfil 20",
-        "Rayos X Torax"
-    ]
+    "id_tipo_estudio": 1,
 }
 ```
 

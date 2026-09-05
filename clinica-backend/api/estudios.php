@@ -13,12 +13,11 @@ session_start();
 
 require_once __DIR__ . '/../models/Estudio.php';
 
-
 $estudioModel = new Estudio();
 $metodo = $_SERVER['REQUEST_METHOD'];
 
-// 1. Identificar si es una consulta pública de un paciente (Método GET con el parámetro 'paciente')
-$esConsultaPublicaPaciente = ($metodo === 'GET' && isset($_GET['paciente']));
+// 1. Identificar si es una consulta pública
+$esConsultaPublicaPaciente = ($metodo === 'GET');
 
 // 2. Validar sesión ÚNICAMENTE si NO es una consulta pública de paciente
 if (!$esConsultaPublicaPaciente && !isset($_SESSION['usuario'])) {
@@ -47,9 +46,9 @@ try {
                 break;
             }
 
-            // Opción 2: Obtener historial de estudios de un paciente (?cedula_paciente=X)
-            if (isset($_GET['cedula_paciente'])) {
-                $cedulaPaciente = trim($_GET['cedula_paciente']);
+            // Opción 2: Obtener historial de estudios de un paciente (?paciente=X)
+            if (isset($_GET['paciente'])) {
+                $cedulaPaciente = trim($_GET['paciente']);
                 if (empty($cedulaPaciente)) {
                     http_response_code(400);
                     echo json_encode(['success' => false, 'error' => 'Cédula de paciente requerida.']);
@@ -60,7 +59,20 @@ try {
                 break;
             }
 
-            // Opción 3 (Por defecto / ?action=pendientes): Bandeja general de laboratorio (Pendientes)
+            // Opción 3: Obtener estudios filtrados por tipo de estudio (?id_tipo_estudio=X o ?id_tipo=X)
+            if (isset($_GET['id_tipo_estudio']) || isset($_GET['id_tipo'])) {
+                $idTipoEstudio = filter_var($_GET['id_tipo_estudio'] ?? $_GET['id_tipo'], FILTER_VALIDATE_INT);
+                if (!$idTipoEstudio) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'ID de tipo de estudio inválido.']);
+                    exit;
+                }
+                $estudios = $estudioModel->obtenerPorTipo($idTipoEstudio);
+                echo json_encode(['success' => true, 'data' => $estudios]);
+                break;
+            }
+
+            // Opción 4 (Por defecto / ?action=pendientes): Bandeja general de laboratorio (Pendientes)
             $estudios = $estudioModel->obtenerPendientes();
             echo json_encode(['success' => true, 'data' => $estudios]);
             break;
@@ -81,16 +93,19 @@ try {
                     exit;
                 }
 
-                if (empty($input['id_consulta']) || empty($input['tipos']) || !is_array($input['tipos'])) {
+                // Permite recibir los IDs tanto en 'tipos' como en 'tipos_estudios'
+                $tiposEstudios = $input['tipos'] ?? $input['tipos_estudios'] ?? null;
+
+                if (empty($input['id_consulta']) || empty($tiposEstudios) || !is_array($tiposEstudios)) {
                     http_response_code(400);
                     echo json_encode([
                         'success' => false, 
-                        'error' => 'Se requiere "id_consulta" y un arreglo "tipos" con los nombres de los exámenes.'
+                        'error' => 'Se requiere "id_consulta" y un arreglo "tipos" (o "tipos_estudios") con los IDs de los tipos de exámenes.'
                     ]);
                     exit;
                 }
 
-                $resultado = $estudioModel->solicitarEstudios($input['id_consulta'], $input['tipos']);
+                $resultado = $estudioModel->solicitarEstudios($input['id_consulta'], $tiposEstudios);
 
                 if ($resultado) {
                     http_response_code(201);
