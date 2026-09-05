@@ -121,7 +121,6 @@ CREATE TABLE cita (
             rango_cita WITH &&
         ) WHERE (estado != 'CANCELADA'),
 
-    -- Esto Tambien tiene que estar no entiendo por que se elimino.
     CONSTRAINT no_solapar_citas_paciente
         EXCLUDE USING gist (
             cedula_paciente WITH =,
@@ -148,22 +147,30 @@ CREATE TABLE consulta (
         FOREIGN KEY (id_cita) REFERENCES cita(id_cita) ON DELETE SET NULL
 );
 
--- 10. Estudio
+-- 10. Crear la tabla catálogo para los exámenes de laboratorio
+CREATE TABLE tipo_estudio (
+    id_tipo_estudio INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_estudio VARCHAR(100) UNIQUE NOT NULL,
+    descripcion TEXT
+);
+
+-- 11. Estudio
 CREATE TABLE estudio (
     id_estudio INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    tipo VARCHAR(100) NOT NULL,
+    id_tipo_estudio INT NOT NULL,
     fecha TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    -- No entiendo por que quitaron los CHEKs, me di cuenta tarde y hay que alterar la BD
     estado VARCHAR(20) NOT NULL  DEFAULT 'SOLICITADO' CHECK (estado IN ('SOLICITADO', 'REALIZADO', 'CANCELADO')),
     id_consulta INT NOT NULL,
     laboratorista VARCHAR(20),
+    CONSTRAINT fk_estudio_tipo 
+        FOREIGN KEY (id_tipo_estudio) REFERENCES tipo_estudio(id_tipo_estudio) ON DELETE CASCADE,
     CONSTRAINT fk_estudio_consulta 
         FOREIGN KEY (id_consulta) REFERENCES consulta(id_consulta) ON DELETE CASCADE,
     CONSTRAINT fk_estudio_laboratorista 
         FOREIGN KEY (laboratorista) REFERENCES laboratorista(cedula) ON DELETE SET NULL
 );
 
--- 11. Resultado
+-- 12. Resultado
 CREATE TABLE resultado (
     id_resultado INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     descripcion TEXT,
@@ -174,7 +181,7 @@ CREATE TABLE resultado (
         FOREIGN KEY (id_estudio) REFERENCES estudio(id_estudio) ON DELETE CASCADE
 );
 
--- 12. Medicamento
+-- 13. Medicamento
 CREATE TABLE medicamento (
     id_medicamento INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -185,7 +192,7 @@ CREATE TABLE medicamento (
     CONSTRAINT no_duplicados UNIQUE (nombre, laboratorio, presentacion)
 );
 
--- 13. Receta
+-- 14. Receta
 CREATE TABLE receta (
     id_receta INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     dosis VARCHAR(100) NOT NULL,
