@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Médico - CliniData</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- BARRA LATERAL -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="../images/logoclinidata.png" alt="CliniData Logo" class="brand-logo">
+        </div>
+        <ul class="sidebar-menu">
+            <li><a onclick="showSection('resumen-dashboard')" class="active" id="link-resumen-dashboard">Resumen</a></li>
+            <li><a onclick="showSection('paciente-buscar')" id="link-paciente-buscar">Buscar Paciente</a></li>
+        </ul>
+        <div style="margin-top: auto;">
+            <a href="login.html" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Panel del Médico</h1>
+            <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Cambiar modo claro/oscuro" title="Cambiar tema">🌓</button>
+        </div>
+
+        <!-- SECCIÓN: RESUMEN / MI PERFIL -->
+        <section id="resumen-dashboard" class="card">
+            <h3 class="card-title">Mi Perfil</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="perfil_nombre_texto">Nombre</label>
+                    <div style="display:flex; gap:8px;">
+                        <select id="perfil_titulo" class="form-control" style="max-width:80px;" disabled>
+                            <option value="Dr." selected>Dr.</option>
+                            <option value="Dra.">Dra.</option>
+                        </select>
+                        <input type="text" id="perfil_nombre_texto" class="form-control" readonly value="Carlos Martínez">
+                    </div>
+                    <input type="hidden" id="perfil_nombre" value="Dr. Carlos Martínez">
+                </div>
+                <div class="form-group">
+                    <label for="perfil_cedula_numero">Cédula</label>
+                    <div style="display:flex; gap:8px;">
+                        <select id="perfil_cedula_letra" class="form-control" style="max-width:80px;" disabled>
+                            <option value="V" selected>V</option>
+                            <option value="E">E</option>
+                        </select>
+                        <input type="text" id="perfil_cedula_numero" class="form-control" readonly value="20456789">
+                    </div>
+                    <input type="hidden" id="perfil_cedula" value="V-20456789">
+                </div>
+                <div class="form-group">
+                    <label for="perfil_carnet_numero">Carnet Médico</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-weight:bold; color:var(--text-color); font-size: 0.9rem;">M.P.P.S.</span>
+                        <input type="text" id="perfil_carnet_numero" class="form-control" readonly value="11234">
+                    </div>
+                    <input type="hidden" id="perfil_carnet" value="M.P.P.S. 11234">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="perfil_tarifa">Tarifa de Consulta</label>
+                    <input type="text" id="perfil_tarifa" class="form-control" readonly value="$50.00">
+                </div>
+                <div class="form-group">
+                    <label for="perfil_especialidad">Especialidad(es)</label>
+                    <input type="text" id="perfil_especialidad" class="form-control" readonly value="Cardiología">
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: BUSCAR PACIENTE (Agrupa Búsqueda, Consulta y Receta) -->
+        <section id="paciente-buscar" class="hidden">
+            
+            <!-- TARJETA: BUSCAR PACIENTE -->
+            <div class="card">
+                <h3 class="card-title">Búsqueda e Información del Paciente</h3>
+
+                <!-- Barra de búsqueda -->
+                <div class="search-bar-container">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="buscar_cedula_numero">Cédula del Paciente</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="buscar_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="buscar_cedula_numero" class="form-control"
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
+                        </div>
+                        <small id="buscar_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="buscar_cedula">
+                    </div>
+                    <button type="button" class="btn btn-primary" style="align-self: flex-end;" onclick="document.getElementById('resultado-paciente').classList.remove('hidden')">Buscar</button>
+                </div>
+
+                <!-- Resultado de la búsqueda -->
+                <div id="resultado-paciente">
+                    <h3 class="card-title" style="font-size: 15px; margin-top: 10px;">Datos del Paciente</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pac_nombre">Nombres</label>
+                            <input type="text" id="pac_nombre" class="form-control" readonly value="Carlos Alberto">
+                        </div>
+                        <div class="form-group">
+                            <label for="pac_apellido">Apellidos</label>
+                            <input type="text" id="pac_apellido" class="form-control" readonly value="Pérez García">
+                        </div>
+                        <div class="form-group">
+                            <label for="pac_fecha_nacimiento">Fecha de Nacimiento</label>
+                            <input type="text" id="pac_fecha_nacimiento" class="form-control" readonly value="12/05/1985">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pac_telefono_numero">Teléfono</label>
+                            <div style="display:flex; gap:8px;">
+                                <select id="pac_telefono_prefijo" class="form-control" style="max-width:110px;" disabled>
+                                    <option value="0414" selected>0414</option>
+                                    <option value="0424">0424</option>
+                                    <option value="0412">0412</option>
+                                    <option value="0416">0416</option>
+                                    <option value="0426">0426</option>
+                                </select>
+                                <input type="text" id="pac_telefono_numero" class="form-control" readonly value="5556677">
+                            </div>
+                            <input type="hidden" id="pac_telefono" value="0414-5556677">
+                        </div>
+                        <div class="form-group">
+                            <label for="pac_email">Correo Electrónico</label>
+                            <input type="text" id="pac_email" class="form-control" readonly value="carlos.perez@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="pac_genero">Género</label>
+                            <select id="pac_genero" class="form-control" disabled>
+                                <option value="Masculino" selected>Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pac_tipo_sangre">Tipo de Sangre</label>
+                            <select id="pac_tipo_sangre" class="form-control" disabled>
+                                <option value="A+">A+</option><option value="A-">A-</option>
+                                <option value="B+">B+</option><option value="B-">B-</option>
+                                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                <option value="O+" selected>O+</option><option value="O-">O-</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pac_direccion">Dirección</label>
+                        <input type="text" id="pac_direccion" class="form-control" readonly value="Av. Bolívar, Calle 10, Casa 45, Valencia">
+                    </div>
+
+                    <!-- HISTORIA MÉDICA -->
+                    <h3 class="card-title" style="font-size: 15px; margin-top: 25px;">Historia Médica</h3>
+                    <form action="procesar_actualizar_historia.php" method="POST">
+                        <input type="hidden" name="cedula_paciente" id="hist_cedula_paciente" value="V-12345678">
+
+                        <div class="form-group">
+                            <label for="hist_antecedentes">Antecedentes</label>
+                            <textarea id="hist_antecedentes" name="antecedentes" class="form-control" placeholder="Antecedentes médicos relevantes...">Hipertensión controlada desde 2019.</textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="hist_alergias">Alergias</label>
+                                <textarea id="hist_alergias" name="alergias" class="form-control" placeholder="Alergias conocidas...">Penicilina.</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="hist_medicacion">Medicación Habitual</label>
+                                <textarea id="hist_medicacion" name="medicacion_habitual" class="form-control" placeholder="Medicación que toma regularmente...">Losartán 50mg, una vez al día.</textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Guardar Historia Médica</button>
+                        </div>
+                    </form>
+
+                    <!-- TIMELINE DE CONSULTAS -->
+                    <h3 class="card-title" style="font-size: 15px; margin-top: 25px;">Consultas Guardadas</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rango_desde">Fecha Desde</label>
+                            <input type="date" id="rango_desde" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="rango_hasta">Fecha Hasta</label>
+                            <input type="date" id="rango_hasta" class="form-control">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end; gap: 10px;">
+                            <button type="button" class="btn btn-primary" style="flex: 1;">Consultar Rango</button>
+                            <button type="button" class="btn btn-outline" style="flex: 1;">Ver Todas</button>
+                        </div>
+                    </div>
+
+                    <ul style="list-style: none; margin-top: 10px;">
+                        <li data-id-consulta="1" onclick="verDetalleConsulta(this)" style="padding: 14px 18px; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 10px; cursor: pointer;">📁 Consulta General — 15/01/2023 — Dr. Martínez</li>
+                        <li data-id-consulta="2" onclick="verDetalleConsulta(this)" style="padding: 14px 18px; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 10px; cursor: pointer;">📁 Exámenes de Laboratorio — 03/03/2023 — Lab. Clínico</li>
+                        <li data-id-consulta="3" onclick="verDetalleConsulta(this)" style="padding: 14px 18px; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 10px; cursor: pointer;">📁 Revisión Cardíaca — 20/04/2023 — Dr. Pérez (Cardiología)</li>
+                        <li data-id-consulta="4" onclick="verDetalleConsulta(this)" style="padding: 14px 18px; border: 1px solid var(--border-color); border-radius: var(--border-radius); cursor: pointer;">📁 Entrega de Resultados — 10/06/2023 — Dr. Martínez</li>
+                    </ul>
+
+                    <!-- TODO BACKEND (David): Aquí se mostrará el detalle de la consulta al hacer clic en una tarjeta. Hacer fetch/AJAX a procesar_detalle_consulta.php?id_consulta= y rellenar los campos -->
+                    <div id="detalle-consulta" class="card hidden" style="margin-top: 20px;">
+                        <h3 class="card-title" style="font-size: 15px;">Detalle de la Consulta</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Diagnóstico</label>
+                                <textarea id="det_diagnostico" class="form-control" readonly placeholder="Diagnóstico..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Observaciones</label>
+                                <textarea id="det_observaciones" class="form-control" readonly placeholder="Observaciones..."></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Costo</label>
+                                <input type="text" id="det_costo" class="form-control" readonly placeholder="$0.00">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Recetas Asociadas</label>
+                            <textarea id="det_recetas" class="form-control" readonly placeholder="Medicamentos recetados..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Estudios Asociados</label>
+                            <textarea id="det_estudios" class="form-control" readonly placeholder="Estudios de laboratorio..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- FIN TARJETA BÚSQUEDA -->
+
+            <!-- TARJETA: REGISTRAR CONSULTA -->
+            <div class="card">
+                <h3 class="card-title">Registrar Nueva Consulta</h3>
+                <form action="procesar_registro_consulta.php" method="POST">
+                    <input type="hidden" name="cedula_medico" value="V-20456789">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cons_cedula_paciente_numero">Cédula del Paciente</label>
+                            <div style="display:flex; gap:8px;">
+                                <select id="cons_cedula_paciente_letra" class="form-control" style="max-width:80px;">
+                                    <option value="V">V</option>
+                                    <option value="E">E</option>
+                                </select>
+                                <input type="text" id="cons_cedula_paciente_numero" class="form-control" required
+                                       inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                       placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
+                            </div>
+                            <small id="cons_cedula_paciente_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                                La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                            </small>
+                            <input type="hidden" id="cons_cedula_paciente" name="cedula_paciente">
+                        </div>
+                        <div class="form-group">
+                            <label for="cons_id_cita">ID de Cita (opcional)</label>
+                            <input type="number" id="cons_id_cita" name="id_cita" class="form-control" placeholder="Si la consulta viene de una cita agendada">
+                        </div>
+                        <div class="form-group">
+                            <label for="cons_costo">Costo</label>
+                            <input type="number" id="cons_costo" name="costo" class="form-control" required step="0.01" min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cons_diagnostico">Diagnóstico</label>
+                        <textarea id="cons_diagnostico" name="diagnostico" class="form-control" required placeholder="Diagnóstico del paciente..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cons_observaciones">Observaciones</label>
+                        <textarea id="cons_observaciones" name="observaciones" class="form-control" placeholder="Observaciones adicionales..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-outline">Limpiar</button>
+                        <button type="submit" class="btn btn-primary">Registrar Consulta</button>
+                    </div>
+                </form>
+            </div> <!-- FIN TARJETA CONSULTA -->
+
+            <!-- TARJETA: REGISTRAR RECETA -->
+            <div class="card">
+                <h3 class="card-title">Registrar Nueva Receta</h3>
+                <form action="procesar_registro_receta.php" method="POST">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rec_id_consulta">ID de Consulta</label>
+                            <input type="number" id="rec_id_consulta" name="id_consulta" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="rec_id_medicamento">Medicamento</label>
+                            <select id="rec_id_medicamento" name="id_medicamento" class="form-control" required>
+                                <option value="">Seleccione...</option>
+                                <option value="1">Losartán 50mg</option>
+                                <option value="2">Amoxicilina 500mg</option>
+                                <option value="3">Ibuprofeno 400mg</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rec_dosis">Dosis</label>
+                            <input type="text" id="rec_dosis" name="dosis" class="form-control" required maxlength="100" placeholder="Ej: 1 tableta">
+                        </div>
+                        <div class="form-group">
+                            <label for="rec_frecuencia">Frecuencia</label>
+                            <input type="text" id="rec_frecuencia" name="frecuencia" class="form-control" required maxlength="100" placeholder="Ej: Cada 8 horas">
+                        </div>
+                        <div class="form-group">
+                            <label for="rec_duracion">Duración</label>
+                            <input type="text" id="rec_duracion" name="duracion" class="form-control" required maxlength="100" placeholder="Ej: 7 días">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rec_indicaciones">Indicaciones</label>
+                        <textarea id="rec_indicaciones" name="indicaciones" class="form-control" placeholder="Indicaciones adicionales..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-outline">Limpiar</button>
+                        <button type="submit" class="btn btn-primary">Registrar Receta</button>
+                    </div>
+                </form>
+            </div> <!-- FIN TARJETA RECETA -->
+
+        </section>
+
+    </main>
+</div>
+
+<script>
+    function showSection(sectionId) {
+        // Ocultar todas las secciones
+        const sections = document.querySelectorAll('.main-content section');
+        sections.forEach(s => s.classList.add('hidden'));
+
+        // Quitar la clase active de todos los links
+        const links = document.querySelectorAll('.sidebar-menu a');
+        links.forEach(l => l.classList.remove('active'));
+
+        // Mostrar la sección seleccionada y activar su link
+        document.getElementById(sectionId).classList.remove('hidden');
+        document.getElementById('link-' + sectionId).classList.add('active');
+    }
+
+    // Funciones de validación
+    function combinarCedula(idLetra, idNumero, idOculto) {
+        const letra = document.getElementById(idLetra);
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => { oculto.value = numero.value ? `${letra.value}-${numero.value}` : ''; };
+        if(letra && numero && oculto) {
+            letra.addEventListener('change', actualizar);
+            numero.addEventListener('input', actualizar);
+        }
+    }
+
+    function soloNumeros(id) {
+        const el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('keypress', (e) => {
+                if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+            });
+        }
+    }
+
+    // Búsqueda
+    function mostrarErrorCedula(idNumero, idError) {
+        const input = document.getElementById(idNumero);
+        const error = document.getElementById(idError);
+        if (input && error) {
+            input.addEventListener('invalid', (e) => {
+                e.preventDefault();
+                error.classList.remove('hidden');
+            });
+            input.addEventListener('input', () => {
+                error.classList.add('hidden');
+            });
+        }
+    }
+
+    combinarCedula('buscar_cedula_letra', 'buscar_cedula_numero', 'buscar_cedula');
+    soloNumeros('buscar_cedula_numero');
+    mostrarErrorCedula('buscar_cedula_numero', 'buscar_cedula_error');
+
+    // Consulta
+    combinarCedula('cons_cedula_paciente_letra', 'cons_cedula_paciente_numero', 'cons_cedula_paciente');
+    soloNumeros('cons_cedula_paciente_numero');
+    mostrarErrorCedula('cons_cedula_paciente_numero', 'cons_cedula_paciente_error');
+
+    function verDetalleConsulta(el) {
+        const idConsulta = el.dataset.idConsulta;
+        document.getElementById('detalle-consulta').classList.remove('hidden');
+        console.log('Cargar detalle de la consulta con id:', idConsulta);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Laboratorio - CliniData</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- BARRA LATERAL -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="../images/logoclinidata.png" alt="CliniData Logo" class="brand-logo">
+        </div>
+        <ul class="sidebar-menu">
+            <li><a onclick="showSection('estudio-registro')" class="active" id="link-estudio-registro">Registrar Estudio</a></li>
+            <li><a onclick="showSection('estudio-edicion')" id="link-estudio-edicion">Editar Estudio</a></li>
+            <li><a onclick="showSection('resultado-registro')" id="link-resultado-registro">Cargar Resultado</a></li>
+        </ul>
+        <div style="margin-top: auto;">
+            <a href="login.html" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Panel de Laboratorio</h1>
+           <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Cambiar modo claro/oscuro" title="Cambiar tema">🌓</button>
+        </div>
+
+        <!-- SECCIÓN: REGISTRO DE ESTUDIO -->
+        <section id="estudio-registro" class="card">
+            <h3 class="card-title">Registrar Nuevo Estudio</h3>
+            <form action="procesar_registro_estudio.php" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg_id_consulta">ID de Consulta (Asociada)</label>
+                        <input type="number" id="reg_id_consulta" name="id_consulta" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_laboratorista_numero">Cédula del Laboratorista</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="reg_laboratorista_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="reg_laboratorista_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 55555555">
+                        </div>
+                        <small id="reg_laboratorista_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="reg_laboratorista" name="laboratorista">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg_tipo">Tipo de Estudio</label>
+                        <input type="text" id="reg_tipo" name="tipo" class="form-control" required maxlength="100" placeholder="Ej: Hematología Completa">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_estado">Estado</label>
+                        <select id="reg_estado" name="estado" class="form-control" required>
+                            <option value="">Seleccione...</option>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="EN PROCESO">En Proceso</option>
+                            <option value="COMPLETADO">Completado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- La fecha de estudio es TIMESTAMP con DEFAULT en BD, pero se puede mandar explícitamente -->
+                <div class="form-group">
+                    <label for="reg_fecha">Fecha del Estudio</label>
+                    <input type="datetime-local" id="reg_fecha" name="fecha" class="form-control" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-outline">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Estudio</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: EDICIÓN DE ESTUDIO -->
+        <section id="estudio-edicion" class="card hidden">
+            <h3 class="card-title">Editar Estudio</h3>
+            <form action="procesar_edicion_estudio.php" method="POST">
+                <input type="hidden" name="id_estudio" value="1">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_id_consulta">ID de Consulta</label>
+                        <input type="number" id="edit_id_consulta" name="id_consulta" class="form-control" required readonly value="120">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_laboratorista_numero">Cédula del Laboratorista</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="edit_laboratorista_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="edit_laboratorista_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="55555555">
+                        </div>
+                        <small id="edit_laboratorista_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="edit_laboratorista" name="laboratorista" value="V-55555555">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_tipo">Tipo de Estudio</label>
+                        <input type="text" id="edit_tipo" name="tipo" class="form-control" required maxlength="100" value="Perfil Lipídico">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_estado">Estado</label>
+                        <select id="edit_estado" name="estado" class="form-control" required>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="EN PROCESO" selected>En Proceso</option>
+                            <option value="COMPLETADO">Completado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_fecha">Fecha del Estudio</label>
+                    <input type="datetime-local" id="edit_fecha" name="fecha" class="form-control" required value="2026-09-04T10:00">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: REGISTRO DE RESULTADO -->
+        <section id="resultado-registro" class="card hidden">
+            <h3 class="card-title">Cargar Resultado de Laboratorio</h3>
+            <form action="procesar_resultado.php" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="res_id_estudio">ID del Estudio Asociado</label>
+                    <input type="number" id="res_id_estudio" name="id_estudio" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="res_descripcion">Descripción / Notas Médicas</label>
+                    <textarea id="res_descripcion" name="descripcion" class="form-control" placeholder="Detalles del resultado..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="res_ruta_archivo">Archivo de Resultados (PDF, JPG, etc)</label>
+                    <!-- El campo en BD se llama ruta_archivo, el input type="file" captura el archivo, y PHP guardará la ruta -->
+                    <input type="file" id="res_ruta_archivo" name="ruta_archivo" class="form-control" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-outline">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Cargar Resultado</button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+</div>
+
+<script>
+    function showSection(sectionId) {
+        
+        const sections = document.querySelectorAll('.main-content section');
+        sections.forEach(s => s.classList.add('hidden'));
+
+        const links = document.querySelectorAll('.sidebar-menu a');
+        links.forEach(l => l.classList.remove('active'));
+
+        document.getElementById(sectionId).classList.remove('hidden');
+        document.getElementById('link-' + sectionId).classList.add('active');
+    }
+
+    // Funciones de validación
+    function combinarCedula(idLetra, idNumero, idOculto) {
+        const letra = document.getElementById(idLetra);
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => { oculto.value = numero.value ? `${letra.value}-${numero.value}` : ''; };
+        if(letra && numero && oculto) {
+            letra.addEventListener('change', actualizar);
+            numero.addEventListener('input', actualizar);
+        }
+    }
+
+    function soloNumeros(id) {
+        const el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('keypress', (e) => {
+                if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+            });
+        }
+    }
+
+    // Registro
+    function mostrarErrorCedula(idNumero, idError) {
+        const input = document.getElementById(idNumero);
+        const error = document.getElementById(idError);
+        if (input && error) {
+            input.addEventListener('invalid', (e) => {
+                e.preventDefault();
+                error.classList.remove('hidden');
+            });
+            input.addEventListener('input', () => {
+                error.classList.add('hidden');
+            });
+        }
+    }
+
+
+    combinarCedula('reg_laboratorista_letra', 'reg_laboratorista_numero', 'reg_laboratorista');
+    soloNumeros('reg_laboratorista_numero');
+    mostrarErrorCedula('reg_laboratorista_numero', 'reg_laboratorista_error');
+
+    // Edición
+    combinarCedula('edit_laboratorista_letra', 'edit_laboratorista_numero', 'edit_laboratorista');
+    soloNumeros('edit_laboratorista_numero');
+    mostrarErrorCedula('edit_laboratorista_numero', 'edit_laboratorista_error');
+
+</script>
+</body>
+</html>

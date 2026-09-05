@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Recepción - CliniData</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- BARRA LATERAL -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="../images/logoclinidata.png" alt="CliniData Logo" class="brand-logo">
+        </div>
+        <ul class="sidebar-menu">
+            <li><a onclick="showSection('resumen-dashboard')" class="active" id="link-resumen-dashboard">Resumen</a></li>
+            <li><a onclick="showSection('paciente-registro')" id="link-paciente-registro">Registrar Paciente</a></li>
+            <li><a onclick="showSection('paciente-edicion')" id="link-paciente-edicion">Editar Paciente</a></li>
+            <li><a onclick="showSection('cita-registro')" id="link-cita-registro">Registrar Cita</a></li>
+            <li><a onclick="showSection('cita-edicion')" id="link-cita-edicion">Editar Cita</a></li>
+        </ul>
+        <div style="margin-top: auto;">
+            <a href="login.html" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Panel de Recepción</h1>
+            <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Cambiar modo claro/oscuro" title="Cambiar tema">🌓</button>
+        </div>
+
+        <!-- SECCIÓN: RESUMEN -->
+        <section id="resumen-dashboard" class="card">
+            <h3 class="card-title">Resumen de Actividad</h3>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h4>Pacientes Registrados</h4>
+                    <span class="number">--</span>
+                </div>
+                <div class="summary-card">
+                    <h4>Citas de Hoy</h4>
+                    <span class="number">--</span>
+                </div>
+                <div class="summary-card">
+                    <h4>Citas Confirmadas</h4>
+                    <span class="number">--</span>
+                </div>
+                <div class="summary-card">
+                    <h4>Consultorios Activos</h4>
+                    <span class="number">--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: REGISTRO DE PACIENTE -->
+        <section id="paciente-registro" class="card hidden">
+            <h3 class="card-title">Registro de Nuevo Paciente</h3>
+            <form action="procesar_registro_paciente.php" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="reg_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="reg_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
+                        </div>
+                        <small id="reg_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <!-- Este input oculto es el que realmente se envía en el POST -->
+                        <input type="hidden" id="reg_cedula" name="cedula">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_nombre">Nombre</label>
+                        <input type="text" id="reg_nombre" name="nombre" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_apellido">Apellido</label>
+                        <input type="text" id="reg_apellido" name="apellido" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="reg_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_genero">Género</label>
+                        <select id="reg_genero" name="genero" class="form-control" required>
+                            <option value="">Seleccione...</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_tipo_sangre">Tipo de Sangre</label>
+                        <select id="reg_tipo_sangre" name="tipo_sangre" class="form-control" required>
+                            <option value="">Seleccione...</option>
+                            <option value="A+">A+</option><option value="A-">A-</option>
+                            <option value="B+">B+</option><option value="B-">B-</option>
+                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                            <option value="O+">O+</option><option value="O-">O-</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg_telefono_numero">Teléfono</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="reg_telefono_prefijo" class="form-control" style="max-width:110px;">
+                                <option value="0424">0424</option>
+                                <option value="0414">0414</option>
+                                <option value="0412">0412</option>
+                                <option value="0422">0422</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                            </select>
+                            <input type="text" id="reg_telefono_numero" class="form-control"
+                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568">
+                        </div>
+                        <input type="hidden" id="reg_telefono" name="telefono">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_email">Correo Electrónico</label>
+                        <input type="email" id="reg_email" name="email" class="form-control" maxlength="150">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg_direccion">Dirección</label>
+                    <textarea id="reg_direccion" name="direccion" class="form-control" maxlength="255"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-outline">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Paciente</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: EDICIÓN DE PACIENTE -->
+        <section id="paciente-edicion" class="card hidden">
+            <h3 class="card-title">Edición de Paciente</h3>
+            <form action="procesar_edicion_paciente.php" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="edit_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="edit_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="12345678">
+                        </div>
+                        <small id="edit_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <!-- Este input oculto es el que realmente se envía en el POST -->
+                        <input type="hidden" id="edit_cedula" name="cedula" value="V-12345678">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_nombre">Nombre</label>
+                        <input type="text" id="edit_nombre" name="nombre" class="form-control" required maxlength="100" value="Juan" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_apellido">Apellido</label>
+                        <input type="text" id="edit_apellido" name="apellido" class="form-control" required maxlength="100" value="Pérez" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="edit_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required value="1990-05-15">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_genero">Género</label>
+                        <select id="edit_genero" name="genero" class="form-control" required>
+                            <option value="Masculino" selected>Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_tipo_sangre">Tipo de Sangre</label>
+                        <select id="edit_tipo_sangre" name="tipo_sangre" class="form-control" required>
+                            <option value="O+" selected>O+</option>
+                            <option value="A+">A+</option>
+                            <!-- ... otras opciones ... -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_telefono_numero">Teléfono</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="edit_telefono_prefijo" class="form-control" style="max-width:110px;">
+                                <option value="0424">0424</option>
+                                <option value="0414">0414</option>
+                                <option value="0412">0412</option>
+                                <option value="0422">0422</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                            </select>
+                            <input type="text" id="edit_telefono_numero" class="form-control"
+                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568" value="1234567">
+                        </div>
+                        <input type="hidden" id="edit_telefono" name="telefono" value="0414-1234567">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_email">Correo Electrónico</label>
+                        <input type="email" id="edit_email" name="email" class="form-control" maxlength="150" value="juan@example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_direccion">Dirección</label>
+                    <textarea id="edit_direccion" name="direccion" class="form-control" maxlength="255">Calle 123</textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: REGISTRO DE CITA -->
+        <section id="cita-registro" class="card hidden">
+            <h3 class="card-title">Agendar Cita Médica</h3>
+            <form action="procesar_registro_cita.php" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg_cedula_paciente_numero">Cédula del Paciente</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="reg_cedula_paciente_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="reg_cedula_paciente_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
+                        </div>
+                        <small id="reg_cedula_paciente_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="reg_cedula_paciente" name="cedula_paciente">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_cedula_medico_numero">Cédula del Médico</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="reg_cedula_medico_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="reg_cedula_medico_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 98765432">
+                        </div>
+                        <small id="reg_cedula_medico_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="reg_cedula_medico" name="cedula_medico">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg_consultorio_numero">Consultorio</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span style="font-weight:bold; color:var(--text-color);">N°</span>
+                            <input type="text" id="reg_consultorio_numero" class="form-control" required maxlength="50" inputmode="numeric" pattern="\d+" title="Solo números permitidos" placeholder="101">
+                        </div>
+                        <input type="hidden" id="reg_consultorio" name="consultorio">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_estado">Estado de la Cita</label>
+                        <select id="reg_estado" name="estado" class="form-control" required>
+                            <option value="">Seleccione...</option>
+                            <option value="PROGRAMADA">Programada</option>
+                            <option value="CONFIRMADA">Confirmada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Rango de la Cita (Inicio - Fin)</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="datetime-local" id="reg_rango_cita_inicio" class="form-control" required>
+                        <span>hasta</span>
+                        <input type="datetime-local" id="reg_rango_cita_fin" class="form-control" required>
+                    </div>
+                    <input type="hidden" id="reg_rango_cita" name="rango_cita">
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-outline">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Cita</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN: EDICIÓN DE CITA -->
+        <section id="cita-edicion" class="card hidden">
+            <h3 class="card-title">Editar Cita Médica</h3>
+            <form action="procesar_edicion_cita.php" method="POST">
+                <input type="hidden" name="id_cita" value="1">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_cedula_paciente_numero">Cédula del Paciente</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="edit_cedula_paciente_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="edit_cedula_paciente_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="12345678">
+                        </div>
+                        <small id="edit_cedula_paciente_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="edit_cedula_paciente" name="cedula_paciente" value="V-12345678">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_cedula_medico_numero">Cédula del Médico</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="edit_cedula_medico_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="edit_cedula_medico_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="98765432">
+                        </div>
+                        <small id="edit_cedula_medico_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                        </small>
+                        <input type="hidden" id="edit_cedula_medico" name="cedula_medico" value="V-98765432">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_consultorio_numero">Consultorio</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span style="font-weight:bold; color:var(--text-color);">N°</span>
+                            <input type="text" id="edit_consultorio_numero" class="form-control" required maxlength="50" inputmode="numeric" pattern="\d+" title="Solo números permitidos" placeholder="101" value="101">
+                        </div>
+                        <input type="hidden" id="edit_consultorio" name="consultorio" value="N° 101">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_estado">Estado de la Cita</label>
+                        <select id="edit_estado" name="estado" class="form-control" required>
+                            <option value="PROGRAMADA" selected>Programada</option>
+                            <option value="CONFIRMADA">Confirmada</option>
+                            <option value="COMPLETADA">Completada</option>
+                            <option value="CANCELADA">Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Rango de la Cita (Inicio - Fin)</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="datetime-local" id="edit_rango_cita_inicio" class="form-control" required value="2026-09-10T08:00">
+                        <span>hasta</span>
+                        <input type="datetime-local" id="edit_rango_cita_fin" class="form-control" required value="2026-09-10T09:00">
+                    </div>
+                    <input type="hidden" id="edit_rango_cita" name="rango_cita" value="[2026-09-10 08:00, 2026-09-10 09:00)">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+</div>
+
+<script>
+    function showSection(sectionId) {
+      
+        const sections = document.querySelectorAll('.main-content section');
+        sections.forEach(s => s.classList.add('hidden'));
+
+        const links = document.querySelectorAll('.sidebar-menu a');
+        links.forEach(l => l.classList.remove('active'));
+
+        document.getElementById(sectionId).classList.remove('hidden');
+        document.getElementById('link-' + sectionId).classList.add('active');
+    }
+
+    // Funciones de validación
+    function combinarCedula(idLetra, idNumero, idOculto) {
+        const letra = document.getElementById(idLetra);
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        if (letra && numero && oculto) {
+            const actualizar = () => { oculto.value = numero.value ? `${letra.value}-${numero.value}` : ''; };
+            letra.addEventListener('change', actualizar);
+            numero.addEventListener('input', actualizar);
+        }
+    }
+
+    function soloNumeros(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keypress', (e) => {
+                if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+            });
+        }
+    }
+
+    function soloLetras(id) {
+        const el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('keypress', (e) => {
+                if (!/^[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]$/.test(e.key)) e.preventDefault();
+            });
+        }
+    }
+
+    function mostrarErrorCedula(idNumero, idError) {
+        const input = document.getElementById(idNumero);
+        const error = document.getElementById(idError);
+        if (input && error) {
+            input.addEventListener('invalid', (e) => {
+                e.preventDefault();
+                error.classList.remove('hidden');
+            });
+            input.addEventListener('input', () => {
+                error.classList.add('hidden');
+            });
+        }
+    }
+
+    function combinarTelefono(idPrefijo, idNumero, idOculto) {
+        const prefijo = document.getElementById(idPrefijo);
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => { oculto.value = numero.value ? `${prefijo.value}-${numero.value}` : ''; };
+        if(prefijo && numero && oculto) {
+            prefijo.addEventListener('change', actualizar);
+            numero.addEventListener('input', actualizar);
+        }
+    }
+
+    function combinarConsultorio(idNumero, idOculto) {
+        const numero = document.getElementById(idNumero);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => { oculto.value = numero.value ? `N° ${numero.value}` : ''; };
+        if(numero && oculto) {
+            numero.addEventListener('input', actualizar);
+        }
+    }
+
+    function combinarRangoCita(idInicio, idFin, idOculto) {
+        const inicio = document.getElementById(idInicio);
+        const fin = document.getElementById(idFin);
+        const oculto = document.getElementById(idOculto);
+        const actualizar = () => {
+            if (inicio.value && fin.value) {
+                const strInicio = inicio.value.replace('T', ' ');
+                const strFin = fin.value.replace('T', ' ');
+                oculto.value = `[${strInicio}, ${strFin})`;
+            } else {
+                oculto.value = '';
+            }
+        };
+        if(inicio && fin && oculto) {
+            inicio.addEventListener('change', actualizar);
+            fin.addEventListener('change', actualizar);
+        }
+    }
+
+    // Inicializar Registro Paciente
+    combinarCedula('reg_cedula_letra', 'reg_cedula_numero', 'reg_cedula');
+    soloNumeros('reg_cedula_numero');
+    mostrarErrorCedula('reg_cedula_numero', 'reg_cedula_error');
+    soloLetras('reg_nombre');
+    soloLetras('reg_apellido');
+    combinarTelefono('reg_telefono_prefijo', 'reg_telefono_numero', 'reg_telefono');
+    soloNumeros('reg_telefono_numero');
+
+    // Inicializar Editar Paciente
+    combinarCedula('edit_cedula_letra', 'edit_cedula_numero', 'edit_cedula');
+    soloNumeros('edit_cedula_numero');
+    mostrarErrorCedula('edit_cedula_numero', 'edit_cedula_error');
+    soloLetras('edit_nombre');
+    soloLetras('edit_apellido');
+    combinarTelefono('edit_telefono_prefijo', 'edit_telefono_numero', 'edit_telefono');
+    soloNumeros('edit_telefono_numero');
+    
+    // Registro Cita
+    combinarCedula('reg_cedula_paciente_letra', 'reg_cedula_paciente_numero', 'reg_cedula_paciente');
+    soloNumeros('reg_cedula_paciente_numero');
+    mostrarErrorCedula('reg_cedula_paciente_numero', 'reg_cedula_paciente_error');
+    combinarCedula('reg_cedula_medico_letra', 'reg_cedula_medico_numero', 'reg_cedula_medico');
+    soloNumeros('reg_cedula_medico_numero');
+    mostrarErrorCedula('reg_cedula_medico_numero', 'reg_cedula_medico_error');
+    combinarConsultorio('reg_consultorio_numero', 'reg_consultorio');
+    soloNumeros('reg_consultorio_numero');
+    combinarRangoCita('reg_rango_cita_inicio', 'reg_rango_cita_fin', 'reg_rango_cita');
+
+    // Edición Cita
+    combinarCedula('edit_cedula_paciente_letra', 'edit_cedula_paciente_numero', 'edit_cedula_paciente');
+    soloNumeros('edit_cedula_paciente_numero');
+    mostrarErrorCedula('edit_cedula_paciente_numero', 'edit_cedula_paciente_error');
+    combinarCedula('edit_cedula_medico_letra', 'edit_cedula_medico_numero', 'edit_cedula_medico');
+    soloNumeros('edit_cedula_medico_numero');
+    mostrarErrorCedula('edit_cedula_medico_numero', 'edit_cedula_medico_error');
+    combinarConsultorio('edit_consultorio_numero', 'edit_consultorio');
+    soloNumeros('edit_consultorio_numero');
+    combinarRangoCita('edit_rango_cita_inicio', 'edit_rango_cita_fin', 'edit_rango_cita');
+
+</script>
+</body>
+</html>
