@@ -1,12 +1,11 @@
 <!-- Documento DTD para Validación (clinica.dtd) -->
 
 <!-- ESTRUCTURA RAÍZ DEL SISTEMA -->
-<!ELEMENT clinica (especialidades, horarios, medicamentos, empleados,
-pacientes, citas, consultas)>
+<!ELEMENT clinica (especialidades, horarios, tipos_estudio, medicamentos, empleados, pacientes, citas, consultas)>
 
 <!-- 1. ESPECIALIDADES -->
 <!ELEMENT especialidades (especialidad*)>
-<!ELEMENT especialidad (nombre, descripcion)>
+<!ELEMENT especialidad (nombre, descripcion?)>
 <!ATTLIST especialidad id_especialidad ID #REQUIRED>
 
 <!-- 2. HORARIOS -->
@@ -14,81 +13,77 @@ pacientes, citas, consultas)>
 <!ELEMENT horario (dias, hora_entrada, hora_salida)>
 <!ATTLIST horario id_horario ID #REQUIRED>
 
-<!-- 3. MEDICAMENTOS -->
+<!-- 3. TIPOS DE ESTUDIO (Catálogo) -->
+<!ELEMENT tipos_estudio (tipo_estudio*)>
+<!ELEMENT tipo_estudio (nombre_estudio, descripcion?)>
+<!ATTLIST tipo_estudio id_tipo_estudio ID #REQUIRED>
+
+<!-- 4. MEDICAMENTOS -->
 <!ELEMENT medicamentos (medicamento*)>
 <!ELEMENT medicamento (nombre, laboratorio, presentacion)>
 <!ATTLIST medicamento id_medicamento ID #REQUIRED>
 
-<!-- 4. EMPLEADOS (Herencia: Administrador, Médico, Laboratorista,
-     Recepcionista) -->
- <!ELEMENT empleados (administradores?, medicos*, laboratoristas*,
- recepcionistas*)>
- <!ELEMENT administradores (administrador*)>
- <!ELEMENT administrador (cedula, nombre, apellido, telefono, email,
- direccion, salario, fecha_contrato, rol, clave_acceso)>
- <!ATTLIST administrador id_empleado ID #REQUIRED horario_ref IDREF
- #REQUIRED>
- <!ELEMENT medicos (medico*)>
- <!ELEMENT medico (cedula, nombre, apellido, telefono, email, direccion,
- salario, fecha_contrato, rol, clave_acceso, carnet_medico, tarifa)>
- <!ATTLIST medico id_empleado ID #REQUIRED especialidades_refs IDREFS
- #REQUIRED horario_ref IDREF #REQUIRED>
- <!ELEMENT laboratoristas (laboratorista*)>
- <!ELEMENT laboratorista (cedula, nombre, apellido, telefono, email,
- direccion, salario, fecha_contrato, rol, clave_acceso, carnet_bioanalista,
- area_Laboratorio)>
- <!ATTLIST laboratorista id_empleado ID #REQUIRED especialidades_refs IDREFS
- #REQUIRED horario_ref IDREF #REQUIRED>
- <!ELEMENT recepcionistas (recepcionista*)>
- <!ELEMENT recepcionista (cedula, nombre, apellido, telefono, email,
- direccion, salario, fecha_contrato, rol, clave_acceso, numero_escritorio,
- extension_telefonica)>
- <!ATTLIST recepcionista id_empleado ID #REQUIRED horario_ref IDREF
- #REQUIRED>
+<!-- 5. EMPLEADOS -->
+<!ELEMENT empleados (administradores?, medicos*, laboratoristas*, recepcionistas*)>
 
-<!-- 5. PACIENTES E HISTORIA MÉDICA -->
+<!ELEMENT administradores (administrador*)>
+<!ELEMENT administrador (cedula, nombre, apellido, telefono?, email?, direccion?, salario, fecha_contrato, rol, clave_acceso)>
+<!ATTLIST administrador id_empleado ID #REQUIRED horario_ref IDREF #REQUIRED>
+
+<!ELEMENT medicos (medico*)>
+<!ELEMENT medico (cedula, nombre, apellido, telefono?, email?, direccion?, salario, fecha_contrato, rol, clave_acceso, carnet_medico, tarifa)>
+<!ATTLIST medico id_empleado ID #REQUIRED especialidades_refs IDREFS #REQUIRED horario_ref IDREF #REQUIRED>
+
+<!ELEMENT laboratoristas (laboratorista*)>
+<!ELEMENT laboratorista (cedula, nombre, apellido, telefono?, email?, direccion?, salario, fecha_contrato, rol, clave_acceso, carnet_bioanalista, area_Laboratorio?)>
+<!ATTLIST laboratorista id_empleado ID #REQUIRED especialidades_refs IDREFS #IMPLIED horario_ref IDREF #REQUIRED>
+
+<!ELEMENT recepcionistas (recepcionista*)>
+<!ELEMENT recepcionista (cedula, nombre, apellido, telefono?, email?, direccion?, salario, fecha_contrato, rol, clave_acceso, numero_escritorio?, extension_telefonica?)>
+<!ATTLIST recepcionista id_empleado ID #REQUIRED horario_ref IDREF #REQUIRED>
+
+<!-- 6. PACIENTES E HISTORIA MÉDICA -->
 <!ELEMENT pacientes (paciente*)>
-<!ELEMENT paciente (cedula, nombre, apellido, telefono, email, direccion,
-fecha_nacimiento, genero, tipo_sangre, historia_medica)>
+<!ELEMENT paciente (cedula, nombre, apellido, telefono?, email?, direccion?, fecha_nacimiento, genero, tipo_sangre, historia_medica)>
 <!ATTLIST paciente id_paciente ID #REQUIRED>
-<!ELEMENT historia_medica (fecha_creacion, antecedentes, alergias,
-medicaciones?)>
+
+<!ELEMENT historia_medica (fecha_creacion, antecedentes?, alergias?, medicaciones?)>
 <!ATTLIST historia_medica id_historia ID #REQUIRED>
-<!ELEMENT alergias (alergia*)>
-<!ELEMENT alergia (nombre, descripcion)>
-<!ATTLIST alergia id_alergia ID #REQUIRED>
+<!ELEMENT alergias (#PCDATA)>
 <!ELEMENT medicaciones (#PCDATA)>
 
-<!-- 6. CITAS MÉDICAS -->
+<!-- 7. CITAS MÉDICAS -->
 <!ELEMENT citas (cita*)>
 <!ELEMENT cita (rango_cita, consultorio, estado)>
 <!ATTLIST cita
-id_cita ID #REQUIRED
-paciente_ref IDREF #REQUIRED
-medico_ref IDREF #REQUIRED
-recepcionista_ref IDREF #IMPLIED>
+    id_cita ID #REQUIRED
+    paciente_ref IDREF #REQUIRED
+    medico_ref IDREF #REQUIRED
 
-<!-- 7. CONSULTAS, RECETAS Y ESTUDIOS -->
+<!-- 8. CONSULTAS, RECETAS Y ESTUDIOS -->
 <!ELEMENT consultas (consulta*)>
-<!ELEMENT consulta (fecha, diagnostico, observaciones, costo, recetas?,
-estudios?)>
+<!ELEMENT consulta (fecha, diagnostico, observaciones?, costo, recetas?, estudios?)>
 <!ATTLIST consulta
-id_consulta ID #REQUIRED
-paciente_ref IDREF #REQUIRED
-medico_ref IDREF #REQUIRED
-cita_ref IDREF #IMPLIED>
+    id_consulta ID #REQUIRED
+    paciente_ref IDREF #REQUIRED
+    medico_ref IDREF #REQUIRED
+    cita_ref IDREF #IMPLIED>
+
 <!ELEMENT recetas (receta*)>
-<!ELEMENT receta (dosis, frecuencia, duracion, indicaciones)>
+<!ELEMENT receta (dosis, frecuencia, duracion, indicaciones?)>
 <!ATTLIST receta
-id_receta ID #REQUIRED
-medicamento_ref IDREF #REQUIRED>
+    id_receta ID #REQUIRED
+    medicamento_ref IDREF #REQUIRED>
+
 <!ELEMENT estudios (estudio*)>
-<!ELEMENT estudio (tipo, fecha, resultados?)>
+<!ELEMENT estudio (fecha, estado, resultados?)>
 <!ATTLIST estudio
-id_estudio ID #REQUIRED
-laboratorista_ref IDREF #REQUIRED>
+    id_estudio ID #REQUIRED
+    tipo_estudio_ref IDREF #REQUIRED
+    laboratorista_ref IDREF #IMPLIED>
+
 <!ELEMENT resultados (resultado*)>
-<!ELEMENT resultado (descripcion, archivo_multimedia)>
+<!ELEMENT resultado (descripcion?, archivo_multimedia, fecha?)>
 <!ATTLIST resultado id_resultado ID #REQUIRED>
 
 <!-- DECLARACIÓN DE CAMPOS DE TEXTO (#PCDATA) -->
@@ -105,6 +100,7 @@ laboratorista_ref IDREF #REQUIRED>
 <!ELEMENT carnet_medico (#PCDATA)>
 <!ELEMENT tarifa (#PCDATA)>
 <!ELEMENT carnet_bioanalista (#PCDATA)>
+<!ELEMENT area_Laboratorio (#PCDATA)>
 <!ELEMENT numero_escritorio (#PCDATA)>
 <!ELEMENT extension_telefonica (#PCDATA)>
 <!ELEMENT fecha_nacimiento (#PCDATA)>
@@ -112,10 +108,13 @@ laboratorista_ref IDREF #REQUIRED>
 <!ELEMENT tipo_sangre (#PCDATA)>
 <!ELEMENT fecha_creacion (#PCDATA)>
 <!ELEMENT antecedentes (#PCDATA)>
+<!ELEMENT alergias (#PCDATA)>
+<!ELEMENT medicaciones (#PCDATA)>
 <!ELEMENT descripcion (#PCDATA)>
 <!ELEMENT dias (#PCDATA)>
 <!ELEMENT hora_entrada (#PCDATA)>
 <!ELEMENT hora_salida (#PCDATA)>
+<!ELEMENT nombre_estudio (#PCDATA)>
 <!ELEMENT laboratorio (#PCDATA)>
 <!ELEMENT presentacion (#PCDATA)>
 <!ELEMENT rango_cita (#PCDATA)>
@@ -129,6 +128,7 @@ laboratorista_ref IDREF #REQUIRED>
 <!ELEMENT frecuencia (#PCDATA)>
 <!ELEMENT duracion (#PCDATA)>
 <!ELEMENT indicaciones (#PCDATA)>
+<!ELEMENT archivo_multimedia (#PCDATA)>
 <!ELEMENT tipo (#PCDATA)>
 <!ELEMENT archivo_multimedia (#PCDATA)>
 <!ELEMENT area_Laboratorio (#PCDATA)>
