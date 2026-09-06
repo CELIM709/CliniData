@@ -39,19 +39,19 @@
             <div class="summary-grid">
                 <div class="summary-card">
                     <h4>Pacientes Registrados</h4>
-                    <span class="number">--</span>
+                    <span class="number" id="resumen_pacientes">--</span>
                 </div>
                 <div class="summary-card">
                     <h4>Citas de Hoy</h4>
-                    <span class="number">--</span>
+                    <span class="number" id="resumen_citas_hoy">--</span>
                 </div>
                 <div class="summary-card">
-                    <h4>Citas Confirmadas</h4>
-                    <span class="number">--</span>
+                    <h4>Consultas del Mes</h4>
+                    <span class="number" id="resumen_citas_confirmadas">--</span>
                 </div>
                 <div class="summary-card">
-                    <h4>Consultorios Activos</h4>
-                    <span class="number">--</span>
+                    <h4>Estudios Pendientes</h4>
+                    <span class="number" id="resumen_consultorios">--</span>
                 </div>
             </div>
         </section>
@@ -163,33 +163,34 @@
                             </select>
                             <input type="text" id="edit_cedula_numero" class="form-control" required
                                    inputmode="numeric" pattern="\d{7,8}" maxlength="8"
-                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="12345678">
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
+                            
+                            <!-- NUEVO BOTÓN DE BÚSQUEDA -->
+                            <button type="button" id="btn_buscar_paciente" class="btn btn-outline">Buscar</button>
                         </div>
                         <small id="edit_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
-                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
+                            La cédula debe tener entre 7 y 8 dígitos.
                         </small>
-                        <!-- Este input oculto es el que realmente se envía en el POST -->
-                        <input type="hidden" id="edit_cedula" name="cedula" value="V-12345678">
                     </div>
                     <div class="form-group">
                         <label for="edit_nombre">Nombre</label>
-                        <input type="text" id="edit_nombre" name="nombre" class="form-control" required maxlength="100" value="Juan" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                       <input type="text" id="edit_nombre" name="nombre" class="form-control" required maxlength="100" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
                     </div>
                     <div class="form-group">
                         <label for="edit_apellido">Apellido</label>
-                        <input type="text" id="edit_apellido" name="apellido" class="form-control" required maxlength="100" value="Pérez" pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
+                        <input type="text" id="edit_apellido" name="apellido" class="form-control" required maxlength="100"  pattern="[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+" title="Solo se permiten letras">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="edit_fecha_nacimiento">Fecha de Nacimiento</label>
-                        <input type="date" id="edit_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required value="1990-05-15">
+                       <input type="date" id="edit_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="edit_genero">Género</label>
                         <select id="edit_genero" name="genero" class="form-control" required>
-                            <option value="Masculino" selected>Masculino</option>
+                            <option value="Masculino">Masculino</option>
                             <option value="Femenino">Femenino</option>
                             <option value="Otro">Otro</option>
                         </select>
@@ -197,7 +198,7 @@
                     <div class="form-group">
                         <label for="edit_tipo_sangre">Tipo de Sangre</label>
                         <select id="edit_tipo_sangre" name="tipo_sangre" class="form-control" required>
-                            <option value="O+" selected>O+</option>
+                            <option value="O+">O+</option> 
                             <option value="A+">A+</option>
                             <!-- ... otras opciones ... -->
                         </select>
@@ -217,19 +218,19 @@
                                 <option value="0426">0426</option>
                             </select>
                             <input type="text" id="edit_telefono_numero" class="form-control"
-                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568" value="1234567">
+                                   inputmode="numeric" pattern="\d{7}" maxlength="7" placeholder="9500568">
                         </div>
-                        <input type="hidden" id="edit_telefono" name="telefono" value="0414-1234567">
+                        <input type="hidden" id="edit_telefono" name="telefono" value="">
                     </div>
                     <div class="form-group">
                         <label for="edit_email">Correo Electrónico</label>
-                        <input type="email" id="edit_email" name="email" class="form-control" maxlength="150" value="juan@example.com">
+                        <input type="email" id="edit_email" name="email" class="form-control" maxlength="150">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="edit_direccion">Dirección</label>
-                    <textarea id="edit_direccion" name="direccion" class="form-control" maxlength="255">Calle 123</textarea>
+                    <textarea id="edit_direccion" name="direccion" class="form-control" maxlength="255"></textarea>
                 </div>
 
                 <div class="form-actions">
@@ -285,14 +286,16 @@
                         <input type="hidden" id="reg_consultorio" name="consultorio">
                     </div>
                     <div class="form-group">
-                        <label for="reg_estado">Estado de la Cita</label>
-                        <select id="reg_estado" name="estado" class="form-control" required>
-                            <option value="">Seleccione...</option>
-                            <option value="PROGRAMADA">Programada</option>
+                        <label for="edit_estado">Estado de la Cita</label>
+                        <!-- En la sección de Editar Cita -->
+                        <select id="edit_estado" name="estado" class="form-control" required>
+                            <option value="PENDIENTE">Programada</option> <!-- Cambiamos PROGRAMADA por PENDIENTE -->
                             <option value="CONFIRMADA">Confirmada</option>
+                            <option value="ATENDIDA">Completada</option>  <!-- Cambiamos COMPLETADA por ATENDIDA (o el término que usen) -->
+                            <option value="CANCELADA">Cancelada</option>
                         </select>
-                    </div>
                 </div>
+            </div>
 
                 <div class="form-group">
                     <label>Rango de la Cita (Inicio - Fin)</label>
@@ -327,12 +330,12 @@
                             </select>
                             <input type="text" id="edit_cedula_paciente_numero" class="form-control" required
                                    inputmode="numeric" pattern="\d{7,8}" maxlength="8"
-                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="12345678">
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="">
                         </div>
                         <small id="edit_cedula_paciente_error" class="hidden" style="color:#dc3545; font-size:12px;">
                             La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
                         </small>
-                        <input type="hidden" id="edit_cedula_paciente" name="cedula_paciente" value="V-12345678">
+                        <input type="hidden" id="edit_cedula_paciente" name="cedula_paciente" value="">
                     </div>
                     <div class="form-group">
                         <label for="edit_cedula_medico_numero">Cédula del Médico</label>
@@ -343,12 +346,12 @@
                             </select>
                             <input type="text" id="edit_cedula_medico_numero" class="form-control" required
                                    inputmode="numeric" pattern="\d{7,8}" maxlength="8"
-                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="98765432">
+                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones">
                         </div>
                         <small id="edit_cedula_medico_error" class="hidden" style="color:#dc3545; font-size:12px;">
                             La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
                         </small>
-                        <input type="hidden" id="edit_cedula_medico" name="cedula_medico" value="V-98765432">
+                        <input type="hidden" id="edit_cedula_medico" name="cedula_medico" value="">
                     </div>
                 </div>
 
@@ -364,9 +367,9 @@
                     <div class="form-group">
                         <label for="edit_estado">Estado de la Cita</label>
                         <select id="edit_estado" name="estado" class="form-control" required>
-                            <option value="PROGRAMADA" selected>Programada</option>
+                            <option value="PENDIENTE">Programada</option> <!-- Cambiamos PROGRAMADA por PENDIENTE -->
                             <option value="CONFIRMADA">Confirmada</option>
-                            <option value="COMPLETADA">Completada</option>
+                            <option value="ATENDIDA">Completada</option>  <!-- Cambiamos COMPLETADA por ATENDIDA (o el término que usen) -->
                             <option value="CANCELADA">Cancelada</option>
                         </select>
                     </div>
@@ -528,5 +531,6 @@
     combinarRangoCita('edit_rango_cita_inicio', 'edit_rango_cita_fin', 'edit_rango_cita');
 
 </script>
+<script src="../js/integracion.js"></script>
 </body>
 </html>

@@ -45,6 +45,7 @@
 </div>
 
 <script>
+    // 1. Función para armar la cédula
     function combinarCedula(idLetra, idNumero, idOculto) {
         const letra = document.getElementById(idLetra);
         const numero = document.getElementById(idNumero);
@@ -54,6 +55,52 @@
         numero.addEventListener('input', actualizar);
     }
     combinarCedula('login_cedula_letra', 'login_cedula_numero', 'cedula');
+
+    // 2. Interceptar el formulario de Login
+    const formLogin = document.querySelector('form');
+    
+    formLogin.addEventListener('submit', async (evento) => {
+        evento.preventDefault(); 
+
+        const payload = {
+            identificador: document.getElementById('cedula').value,
+            clave: document.getElementById('clave_acceso').value
+        };
+
+        try {
+            // Ruta corregida: sale de 'views' (../) y entra a 'clinica-backend/api'
+            const respuesta = await fetch('../clinica-backend/api/login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok && datos.success) {
+                const rol = datos.usuario.rol;
+                
+                if (rol === 'RECEPCIONISTA') {
+                    window.location.href = 'recepcionista_dashboard.html';
+                } else if (rol === 'ADMIN') {
+                    window.location.href = 'administrador_dashboard.html';
+                } else if (rol === 'MEDICO') {
+                    window.location.href = 'medico_dashboard.html';
+                } else if (rol === 'LABORATORISTA') {
+                    window.location.href = 'laboratorista_dashboard.html';
+                } else {
+                    alert('Rol sin vista asignada: ' + rol);
+                }
+            } else {
+                alert('Credenciales inválidas: ' + datos.error);
+            }
+        } catch (error) {
+            console.error("Error en la petición de login:", error);
+            alert("No se pudo conectar con el servidor. Abre F12 para más detalles.");
+        }
+    }); 
 </script>
 </body>
 </html>

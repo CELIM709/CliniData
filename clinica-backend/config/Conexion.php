@@ -29,4 +29,4 @@ class Conexion {
 }
 // Prueba rápida (eliminar o comentar después de verificar)
 $db = Conexion::conectar();
-if ($db) echo "Conexion exitosa a PostgreSQL mediante PDO";
+//if ($db) echo "Conexion exitosa a PostgreSQL mediante PDO";
