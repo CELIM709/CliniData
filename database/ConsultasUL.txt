@@ -1,6 +1,116 @@
 -- ============================================================================
--- PARTE II: Consultas SQL (DQL) para las Preguntas de Negocio 6 a 10
+-- Consultas SQL (DQL) para las Preguntas de Negocio 1 a 10
 -- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 1: ¿Qué citas tiene programadas un paciente?
+-- 
+-- Explicación Técnica:
+-- 1. Realiza una combinación de tablas (JOIN) entre 'cita', 'paciente' y 'persona' 
+--    para obtener la información del paciente y su agenda.
+-- 2. Une adicionalmente con 'medico' y 'persona' para conocer el médico tratante.
+-- 3. Aplica un filtro en la cláusula WHERE especificando la cédula del paciente 
+--    y validando que el estado de la cita sea 'PROGRAMADA' (o distinto de 'CANCELADA').
+-- ----------------------------------------------------------------------------
+SELECT 
+    c.id_cita,
+    c.rango_cita,
+    c.consultorio,
+    c.estado,
+    p_med.nombre AS nombre_medico,
+    p_med.apellido AS apellido_medico
+FROM cita c
+JOIN paciente pac ON c.cedula_paciente = pac.cedula
+JOIN medico m ON c.cedula_medico = m.cedula
+JOIN persona p_med ON m.cedula = p_med.cedula
+WHERE c.cedula_paciente = 'V-22333444' -- Parámetro: Cédula del paciente
+  AND c.estado = 'PROGRAMADA';
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 2: ¿Qué pacientes ha atendido un médico en una fecha determinada?
+-- 
+-- Explicación Técnica:
+-- 1. Relaciona la tabla 'consulta' con 'paciente' y 'persona' para extraer la 
+--    identificación y los datos filiatorios de los pacientes atendidos.
+-- 2. Utiliza la función DATE() sobre el campo 'fecha' de la consulta para comparar 
+--    únicamente el componente de fecha (año-mes-día) e ignorar la hora.
+-- 3. Filtra mediante la cédula del médico tratante y la fecha específica requerida.
+-- ----------------------------------------------------------------------------
+SELECT DISTINCT
+    p_pac.cedula,
+    p_pac.nombre,
+    p_pac.apellido,
+    p_pac.telefono,
+    p_pac.email
+FROM consulta con
+JOIN paciente pac ON con.cedula_paciente = pac.cedula
+JOIN persona p_pac ON pac.cedula = p_pac.cedula
+WHERE con.cedula_medico = 'V-15234567' -- Parámetro: Cédula del médico
+  AND DATE(con.fecha) = '2026-08-25'; -- Parámetro: Fecha a consultar
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 3: ¿Qué estudios tiene pendientes un paciente?
+-- 
+-- Explicación Técnica:
+-- 1. Combina las tablas 'estudio', 'consulta' y 'tipo_estudio' para vincular los 
+--    exámenes solicitados en consulta con la descripción del catálogo.
+-- 2. Filtra por la cédula del paciente a través de la consulta origen.
+-- 3. Evalúa el estado del estudio mediante la condición e.estado = 'PENDIENTE' 
+--    o verificando que no posea registros asociados en la tabla 'resultado'.
+-- ----------------------------------------------------------------------------
+SELECT 
+    e.id_estudio,
+    te.nombre_estudio,
+    e.fecha AS fecha_solicitud,
+    e.estado
+FROM estudio e
+JOIN consulta con ON e.id_consulta = con.id_consulta
+JOIN tipo_estudio te ON e.id_tipo_estudio = te.id_tipo_estudio
+WHERE con.cedula_paciente = 'V-22333444' -- Parámetro: Cédula del paciente
+  AND e.estado = 'PENDIENTE';
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 4: ¿Cuáles son los resultados de los exámenes de un paciente?
+-- 
+-- Explicación Técnica:
+-- 1. Realiza un INNER JOIN en cadena desde 'resultado' pasando por 'estudio', 
+--    'tipo_estudio' y 'consulta'.
+-- 2. Obtiene los detalles de la muestra procesada, observaciones y la ruta 
+--    al archivo multimedia del resultado digitalizado.
+-- 3. Filtra la búsqueda por la cédula del paciente solicitado.
+-- ----------------------------------------------------------------------------
+SELECT 
+    r.id_resultado,
+    te.nombre_estudio,
+    r.fecha AS fecha_resultado,
+    r.descripcion AS observaciones_resultado,
+    r.archivo_multimedia
+FROM resultado r
+JOIN estudio e ON r.id_estudio = e.id_estudio
+JOIN tipo_estudio te ON e.id_tipo_estudio = te.id_tipo_estudio
+JOIN consulta con ON e.id_consulta = con.id_consulta
+WHERE con.cedula_paciente = 'V-22333444'; -- Parámetro: Cédula del paciente
+
+
+-- ----------------------------------------------------------------------------
+-- Pregunta 5: ¿Cuántas consultas se realizaron en un mes?
+-- 
+-- Explicación Técnica:
+-- 1. Utiliza la función de agregación COUNT(id_consulta) para contabilizar el 
+--    total de atenciones médicas registradas.
+-- 2. Emplea la función TO_CHAR(fecha, 'YYYY-MM') o la extracción de rango temporal 
+--    EXTRACT(MONTH FROM fecha) y EXTRACT(YEAR FROM fecha) para delimitar el período mensual.
+-- ----------------------------------------------------------------------------
+SELECT 
+    TO_CHAR(fecha, 'YYYY-MM') AS mes_anio,
+    COUNT(id_consulta) AS total_consultas
+FROM consulta
+WHERE TO_CHAR(fecha, 'YYYY-MM') = '2026-08' -- Parámetro: Año y Mes (YYYY-MM)
+GROUP BY TO_CHAR(fecha, 'YYYY-MM');
+
 
 -- ----------------------------------------------------------------------------
 -- Pregunta 6: ¿Qué médicos pertenecen a una especialidad?
@@ -83,7 +193,7 @@ FROM consulta con
 JOIN paciente pac ON con.cedula_paciente = pac.cedula
 JOIN medico m ON con.cedula_medico = m.cedula
 JOIN persona p_med ON m.cedula = p_med.cedula
-WHERE con.cedula_paciente = 'V-87654321' -- Parámetro: Cédula del paciente
+WHERE con.cedula_paciente = 'V-22333444' -- Parámetro: Cédula del paciente
 ORDER BY con.fecha DESC;
 
 
