@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // MÓDULO: CARGAR RESUMEN (DASHBOARD)
     // ==========================================
     async function cargarResumen() {
+        if (!document.getElementById('resumen_pacientes')) return;
+
         try {
             // Agregamos { cache: 'no-store' } para evitar que el navegador recicle datos viejos
             const respuesta = await fetch('../clinica-backend/api/empleados.php?action=estadisticas', {
@@ -294,4 +296,103 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+// ==========================================
+// MÓDULO: ESTADÍSTICAS DEL ADMINISTRADOR
+// ==========================================
+async function cargarResumenAdmin() {
+    if (!document.getElementById('total_recepcionistas')) return; 
+
+    try {
+        // Quitamos "action=estadisticas" para obtener el arreglo completo de empleados
+        const respuesta = await fetch('../clinica-backend/api/empleados.php?t=' + new Date().getTime());
+        const datos = await respuesta.json();
+
+        if (respuesta.ok && datos.success) {
+            const empleados = datos.data; 
+            
+            let contRecepcionistas = 0;
+            let contLaboratoristas = 0;
+            let contMedicos = 0;
+
+            // Recorremos la lista y contamos cada rol
+            empleados.forEach(emp => {
+                const rol = emp.rol ? emp.rol.toUpperCase() : '';
+                if (rol === 'RECEPCIONISTA') contRecepcionistas++;
+                else if (rol === 'LABORATORISTA') contLaboratoristas++;
+                else if (rol === 'MEDICO') contMedicos++;
+            });
+
+            // Inyectamos los resultados en el HTML
+            document.getElementById('total_recepcionistas').textContent = contRecepcionistas;
+            document.getElementById('total_laboratoristas').textContent = contLaboratoristas;
+            document.getElementById('total_medicos').textContent = contMedicos;
+            document.getElementById('total_empleados').textContent = empleados.length;
+        }
+    } catch (error) {
+        console.error("Error cargando estadísticas del administrador:", error);
+    }
+}
+// Ejecutar al cargar la página
+cargarResumenAdmin();
+
+const formRecepcionista = document.getElementById('form-registro-recepcionista');
+
+if (formRecepcionista) {
+    formRecepcionista.addEventListener('submit', async (evento) => {
+        evento.preventDefault(); // Evitamos que la página se recargue (adiós error 404)
+
+        // Armamos los datos compuestos leyendo directamente las cajas
+        const cedula = `${document.getElementById('rec_cedula_letra').value}-${document.getElementById('rec_cedula_numero').value}`;
+        const numTel = document.getElementById('rec_telefono_numero').value;
+        const telefono = numTel ? `${document.getElementById('rec_telefono_prefijo').value}-${numTel}` : '';
+        const numExt = document.getElementById('rec_extension_tlf_numero').value;
+        const extension = numExt ? `${document.getElementById('rec_extension_tlf_prefijo').value}-${numExt}` : '';
+
+        // Construimos la estructura exacta que espera empleados.php
+        const payload = {
+            persona: {
+                cedula: cedula,
+                nombre: document.getElementById('rec_nombre').value,
+                apellido: document.getElementById('rec_apellido').value,
+                fecha_nacimiento: document.getElementById('rec_fecha_nacimiento').value,
+                telefono: telefono,
+                email: document.getElementById('rec_email').value,
+                direccion: document.getElementById('rec_direccion').value
+            },
+            empleado: {
+                salario: document.getElementById('rec_salario').value,
+                fecha_contratado: document.getElementById('rec_fecha_contratado').value,
+                id_horario: document.getElementById('rec_id_horario').value,
+                clave_acceso: document.getElementById('rec_clave_acceso').value,
+                rol: 'RECEPCIONISTA'
+            },
+            rol_especifico: {
+                estacion_trabajo: document.getElementById('rec_estacion_trabajo').value,
+                extension_tlf: extension
+            }
+        };
+
+        try {
+            const respuesta = await fetch('../clinica-backend/api/empleados.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            const datos = await respuesta.json();
+            
+            if (respuesta.ok && datos.success) {
+                alert('Recepcionista registrada con éxito');
+                formRecepcionista.reset();
+                cargarResumenAdmin(); // Actualizamos los números del dashboard al instante
+            } else {
+                alert('Error al registrar: ' + (datos.error || 'Problema desconocido'));
+            }
+        } catch (error) {
+            console.error("Error en la petición POST:", error);
+        }
+    });
+}
+
 });

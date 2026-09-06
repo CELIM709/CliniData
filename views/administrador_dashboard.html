@@ -38,19 +38,19 @@
             <div class="summary-grid">
                 <div class="summary-card">
                     <h4>Recepcionistas</h4>
-                    <span class="number">--</span>
+                    <span class="number" id="total_recepcionistas">--</span>
                 </div>
                 <div class="summary-card">
                     <h4>Laboratoristas</h4>
-                    <span class="number">--</span>
+                    <span class="number" id="total_laboratoristas">--</span>
                 </div>
                 <div class="summary-card">
                     <h4>Médicos</h4>
-                    <span class="number">--</span>
+                    <span class="number" id="total_medicos">--</span>
                 </div>
                 <div class="summary-card">
                     <h4>Total Empleados</h4>
-                    <span class="number">--</span>
+                    <span class="number" id="total_empleados">--</span>
                 </div>
             </div>
         </section>
@@ -58,7 +58,7 @@
         <!-- SECCIÓN: REGISTRO DE RECEPCIONISTA -->
         <section id="recepcionista-registro" class="card hidden">
             <h3 class="card-title">Registrar Nueva Recepcionista</h3>
-            <form action="procesar_registro_recepcionista.php" method="POST">
+            <form id="form-registro-recepcionista">
                 <input type="hidden" name="rol" value="RECEPCIONISTA">
 
                 <!-- Datos de Persona -->
@@ -509,6 +509,9 @@
     soloNumeros('med_telefono_numero');
     combinarCarnet('med_carnet_medico_numero', 'med_carnet_medico');
     soloNumeros('med_carnet_medico_numero');
+    
 </script>
+
+<script src="../js/integracion.js"></script>
 </body>
 </html>
