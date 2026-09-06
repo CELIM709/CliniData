@@ -28,6 +28,18 @@
         </horario>
     </horarios>
 
+    <!-- TIPOS DE ESTUDIO (Catálogo de Exámenes) -->
+    <tipos_estudio>
+        <tipo_estudio id_tipo_estudio="TEST01">
+            <nombre_estudio>Perfil Lipídico</nombre_estudio>
+            <descripcion>Examen sanguíneo para evaluar colesterol y triglicéridos</descripcion>
+        </tipo_estudio>
+        <tipo_estudio id_tipo_estudio="TEST02">
+            <nombre_estudio>Hematología Completa</nombre_estudio>
+            <descripcion>Conteo de células sanguíneas</descripcion>
+        </tipo_estudio>
+    </tipos_estudio>
+
     <!-- MEDICAMENTOS -->
     <medicamentos>
         <medicamento id_medicamento="MED01">
@@ -106,12 +118,7 @@
             <historia_medica id_historia="HM01">
                 <fecha_creacion>2026-01-10</fecha_creacion>
                 <antecedentes>Hipertensión arterial familiar</antecedentes>
-                <alergias>
-                    <alergia id_alergia="ALG01">
-                        <nombre>Penicilina</nombre>
-                        <descripcion>Erupción cutánea grave</descripcion>
-                    </alergia>
-                </alergias>
+                <alergias>Penicilina (Erupción cutánea grave)</alergias>
                 <medicaciones>Ninguna actualmente</medicaciones>
             </historia_medica>
         </paciente>
@@ -144,7 +151,7 @@
             </recetas>
 
             <estudios>
-                <estudio id_estudio="EST01" laboratorista_ref="EMP02">
+                <estudio id_estudio="EST01" tipo_estudio_ref="TEST01" laboratorista_ref="EMP02">
                     <tipo>Perfil Lipídico</tipo>
                     <fecha>2026-08-25</fecha>
                     <resultados>
