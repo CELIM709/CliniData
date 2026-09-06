@@ -395,4 +395,119 @@ if (formRecepcionista) {
     });
 }
 
+// ==========================================
+// REGISTRAR LABORATORISTA (ADMIN)
+// ==========================================
+const formLaboratorista = document.getElementById('form-registro-laboratorista');
+if (formLaboratorista) {
+    formLaboratorista.addEventListener('submit', async (evento) => {
+        evento.preventDefault(); 
+        
+        const numTel = document.getElementById('lab_telefono_numero').value;
+        const telefono = numTel ? `${document.getElementById('lab_telefono_prefijo').value}-${numTel}` : '';
+
+        const payload = {
+            persona: {
+                cedula: `${document.getElementById('lab_cedula_letra').value}-${document.getElementById('lab_cedula_numero').value}`,
+                nombre: document.getElementById('lab_nombre').value,
+                apellido: document.getElementById('lab_apellido').value,
+                fecha_nacimiento: document.getElementById('lab_fecha_nacimiento').value,
+                telefono: telefono,
+                email: document.getElementById('lab_email').value,
+                direccion: document.getElementById('lab_direccion').value
+            },
+            empleado: {
+                salario: document.getElementById('lab_salario').value,
+                fecha_contratado: document.getElementById('lab_fecha_contratado').value,
+                id_horario: document.getElementById('lab_id_horario').value,
+                clave_acceso: document.getElementById('lab_clave_acceso').value,
+                rol: 'LABORATORISTA'
+            },
+            rol_especifico: {
+                carnet_bioanalista: `M.P.P.S. ${document.getElementById('lab_carnet_bioanalista_numero').value}`,
+                area: document.getElementById('lab_area').value
+            }
+        };
+
+        try {
+            const respuesta = await fetch('../clinica-backend/api/empleados.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const datos = await respuesta.json();
+            
+            if (respuesta.ok && datos.success) {
+                alert('Laboratorista registrado con éxito');
+                formLaboratorista.reset();
+                cargarResumenAdmin(); 
+            } else {
+                alert('Error al registrar: ' + (datos.error || 'Problema desconocido'));
+            }
+        } catch (error) {
+            console.error("Error POST Laboratorista:", error);
+        }
+    });
+}
+
+// ==========================================
+// REGISTRAR MÉDICO (ADMIN)
+// ==========================================
+const formMedico = document.getElementById('form-registro-medico');
+if (formMedico) {
+    formMedico.addEventListener('submit', async (evento) => {
+        evento.preventDefault(); 
+        
+        const numTel = document.getElementById('med_telefono_numero').value;
+        const telefono = numTel ? `${document.getElementById('med_telefono_prefijo').value}-${numTel}` : '';
+
+        // Extraemos las especialidades seleccionadas (pueden ser varias)
+        const selectEspecialidades = document.getElementById('med_especialidades');
+        const especialidades = Array.from(selectEspecialidades.selectedOptions).map(opt => opt.value);
+
+        const payload = {
+            persona: {
+                cedula: `${document.getElementById('med_cedula_letra').value}-${document.getElementById('med_cedula_numero').value}`,
+                nombre: document.getElementById('med_nombre').value,
+                apellido: document.getElementById('med_apellido').value,
+                fecha_nacimiento: document.getElementById('med_fecha_nacimiento').value,
+                telefono: telefono,
+                email: document.getElementById('med_email').value,
+                direccion: document.getElementById('med_direccion').value
+            },
+            empleado: {
+                salario: document.getElementById('med_salario').value,
+                fecha_contratado: document.getElementById('med_fecha_contratado').value,
+                id_horario: document.getElementById('med_id_horario').value,
+                clave_acceso: document.getElementById('med_clave_acceso').value,
+                rol: 'MEDICO'
+            },
+            rol_especifico: {
+                carnet_medico: `M.P.P.S. ${document.getElementById('med_carnet_medico_numero').value}`,
+                tarifa: document.getElementById('med_tarifa').value,
+                especialidades: especialidades
+            }
+        };
+
+        try {
+            const respuesta = await fetch('../clinica-backend/api/empleados.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const datos = await respuesta.json();
+            
+            if (respuesta.ok && datos.success) {
+                alert('Médico registrado con éxito');
+                formMedico.reset();
+                cargarResumenAdmin(); 
+            } else {
+                alert('Error al registrar: ' + (datos.error || 'Problema desconocido'));
+            }
+        } catch (error) {
+            console.error("Error POST Médico:", error);
+        }
+    });
+}
+
 });
