@@ -84,12 +84,12 @@ try {
             $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
             $action = $input['action'] ?? $_GET['action'] ?? 'solicitar';
 
-            // ACCIÓN A: Registrar exámenes desde una consulta médica o de laboratorio
+            // ACCIÓN A: Solicitar exámenes desde una consulta médica
             if ($action === 'solicitar') {
                 $rolUsuario = $_SESSION['usuario']['rol'] ?? '';
-                if (!in_array($rolUsuario, ['MEDICO', 'LABORATORISTA', 'ADMIN'])) {
+                if (!in_array($rolUsuario, ['MEDICO', 'ADMIN'])) {
                     http_response_code(403);
-                    echo json_encode(['success' => false, 'error' => 'Solo médicos, laboratoristas o administradores pueden registrar exámenes.']);
+                    echo json_encode(['success' => false, 'error' => 'Solo médicos o administradores pueden solicitar exámenes.']);
                     exit;
                 }
 
@@ -105,8 +105,7 @@ try {
                     exit;
                 }
 
-                $cedulaLaboratorista = $rolUsuario === 'LABORATORISTA' ? $_SESSION['usuario']['cedula'] : null;
-                $resultado = $estudioModel->solicitarEstudios($input['id_consulta'], $tiposEstudios, $cedulaLaboratorista);
+                $resultado = $estudioModel->solicitarEstudios($input['id_consulta'], $tiposEstudios);
 
                 if ($resultado) {
                     http_response_code(201);
@@ -148,17 +147,17 @@ try {
                 break;
             }
 
-            // ACCIÓN C: Cancelar un estudio pendiente
+            // ACCIÓN C: Cambiar estado arbitrario (SOLICITADO, REALIZADO, CANCELADO)
             if ($action === 'cambiar_estado') {
                 $idEstudio = $input['id_estudio'] ?? null;
                 $estado = strtoupper($input['estado'] ?? '');
 
-                $estadosValidos = ['CANCELADA'];
+                $estadosValidos = ['SOLICITADO', 'REALIZADO', 'CANCELADO'];
                 if (!$idEstudio || !in_array($estado, $estadosValidos)) {
                     http_response_code(400);
                     echo json_encode([
                         'success' => false, 
-                        'error' => 'Solo se puede cancelar un estudio pendiente.'
+                        'error' => 'Estado no válido. Debe ser SOLICITADO, REALIZADO o CANCELADO.'
                     ]);
                     exit;
                 }

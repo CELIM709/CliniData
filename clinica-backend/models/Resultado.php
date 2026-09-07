@@ -12,36 +12,18 @@ class Resultado {
      * Registrar un nuevo resultado/archivo para un estudio
      */
     public function registrarResultado($id_estudio, $descripcion, $ruta_archivo) {
-        try {
-            $this->db->beginTransaction();
+        $sql = "INSERT INTO resultado (descripcion, ruta_archivo, id_estudio)
+                VALUES (:descripcion, :ruta_archivo, :id_estudio)
+                RETURNING id_resultado";
 
-            $stmtEstado = $this->db->prepare("SELECT estado FROM estudio WHERE id_estudio = :id_estudio FOR UPDATE");
-            $stmtEstado->execute([':id_estudio' => $id_estudio]);
-            if ($stmtEstado->fetchColumn() !== 'PENDIENTE') {
-                throw new Exception('Solo se puede cargar un resultado para un estudio pendiente.');
-            }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':descripcion'  => $descripcion,
+            ':ruta_archivo' => $ruta_archivo,
+            ':id_estudio'   => $id_estudio
+        ]);
 
-            $sql = "INSERT INTO resultado (descripcion, ruta_archivo, id_estudio)
-                    VALUES (:descripcion, :ruta_archivo, :id_estudio)
-                    RETURNING id_resultado";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':descripcion'  => $descripcion,
-                ':ruta_archivo' => $ruta_archivo,
-                ':id_estudio'   => $id_estudio
-            ]);
-            $idResultado = $stmt->fetchColumn();
-
-            $stmtEstado = $this->db->prepare("UPDATE estudio SET estado = 'REALIZADO' WHERE id_estudio = :id_estudio");
-            $stmtEstado->execute([':id_estudio' => $id_estudio]);
-            $this->db->commit();
-            return $idResultado;
-        } catch (Exception $e) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
-            throw $e;
-        }
+        return $stmt->fetchColumn();
     }
 
     /**

@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 session_start();
 
 require_once __DIR__ . '/../models/Cita.php';
-require_once __DIR__ . '/../models/Paciente.php';
 
 
 
@@ -21,16 +20,6 @@ $metodo = $_SERVER['REQUEST_METHOD'];
 
 // 1. Identificar si es una consulta pública de un paciente (Método GET con el parámetro 'paciente')
 $esConsultaPublicaPaciente = ($metodo === 'GET' && isset($_GET['paciente']));
-
-if ($esConsultaPublicaPaciente) {
-    $fechaNacimiento = trim($_GET['fecha_nacimiento'] ?? '');
-    $paciente = (new Paciente())->obtenerPorCedula($_GET['paciente']);
-    if (!$paciente || $fechaNacimiento === '' || $paciente['fecha_nacimiento'] !== $fechaNacimiento) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Cédula o fecha de nacimiento incorrecta.']);
-        exit;
-    }
-}
 
 // 2. Validar sesión ÚNICAMENTE si NO es una consulta pública de paciente
 if (!$esConsultaPublicaPaciente && !isset($_SESSION['usuario'])) {
@@ -44,16 +33,6 @@ try {
 
         // --- CONSULTAR CITAS ---
         case 'GET':
-            if (isset($_GET['action']) && $_GET['action'] === 'hoy') {
-                echo json_encode(['success' => true, 'data' => $citaModel->obtenerDelDia()]);
-                break;
-            }
-
-            if (isset($_GET['action']) && $_GET['action'] === 'editar') {
-                echo json_encode(['success' => true, 'data' => $citaModel->obtenerEditables(10)]);
-                break;
-            }
-
             // consultar por medico, o porpaciente, por deferto solo pendientes
             $medico = $_GET['medico'] ?? null;
             $paciente = $_GET['paciente'] ?? null;
@@ -91,12 +70,10 @@ try {
                 }
             }
 
-            // Las citas nuevas siempre comienzan como programadas.
-            $input['estado'] = 'PENDIENTE';
-            $idCita = $citaModel->agendarCita($input);
+            $citaModel->agendarCita($input);
 
             http_response_code(201);
-            echo json_encode(['success' => true, 'mensaje' => 'Cita agendada con éxito.', 'id_cita' => $idCita]);
+            echo json_encode(['success' => true, 'mensaje' => 'Cita agendada con éxito.']);
             break;
 
         // --- CAMBIAR ESTADO O REPROGRAMAR ---
@@ -110,25 +87,16 @@ try {
             }
 
             // Opción 1: Cambiar Estado ('CONFIRMADA', 'CANCELADA', etc.)
-            $actualizado = false;
             if (!empty($input['nuevo_estado'])) {
                 $citaModel->cambiarEstado($input['id_cita'], $input['nuevo_estado']);
-                $actualizado = true;
+                echo json_encode(['success' => true, 'mensaje' => 'Estado de la cita actualizado.']);
+                exit;
             }
 
             // Opción 2: Reprogramar fecha/hora
             if (!empty($input['fecha_inicio']) && !empty($input['fecha_fin'])) {
                 $citaModel->reprogramarCita($input['id_cita'], $input['fecha_inicio'], $input['fecha_fin']);
-                $actualizado = true;
-            }
-
-            if (!empty($input['cedula_paciente']) && !empty($input['cedula_medico']) && !empty($input['consultorio'])) {
-                $citaModel->actualizarDatos($input['id_cita'], $input['cedula_paciente'], $input['cedula_medico'], $input['consultorio']);
-                $actualizado = true;
-            }
-
-            if ($actualizado) {
-                echo json_encode(['success' => true, 'mensaje' => 'Cita actualizada exitosamente.']);
+                echo json_encode(['success' => true, 'mensaje' => 'Cita reprogramada exitosamente.']);
                 exit;
             }
 

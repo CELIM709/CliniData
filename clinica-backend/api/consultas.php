@@ -50,9 +50,6 @@ try {
                 $consultas = $consultaModel->obtenerPorMedico($_GET['medico']);
                 echo json_encode(['success' => true, 'data' => $consultas]);
 
-            } elseif (isset($_GET['action']) && $_GET['action'] === 'para_estudio') {
-                echo json_encode(['success' => true, 'data' => $consultaModel->obtenerParaEstudios(10)]);
-
             } else {
                 http_response_code(400);
                 echo json_encode([

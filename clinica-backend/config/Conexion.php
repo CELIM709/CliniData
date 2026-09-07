@@ -2,7 +2,7 @@
 
 class Conexion {
     private static $host = 'localhost';
-    private static $port = null;
+    private static $port = '5432';
     private static $dbname = 'clinica';  
     private static $user = 'postgres';     // Usuario predeterminado
     private static $password = '1234';     // Contraseña predeterminada
@@ -12,8 +12,7 @@ class Conexion {
     public static function conectar() {
         if (self::$instancia === null) {
             try {
-                $port = getenv('CLINIDATA_DB_PORT') ?: '5432';
-                $dsn = "pgsql:host=" . self::$host . ";port=" . $port . ";dbname=" . self::$dbname;
+                $dsn = "pgsql:host=" . self::$host . ";port=" . self::$port . ";dbname=" . self::$dbname;
                 
                 self::$instancia = new PDO($dsn, self::$user, self::$password, [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,          // Lanza excepciones en errores SQL
