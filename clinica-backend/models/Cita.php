@@ -21,10 +21,10 @@ class Cita {
                         :cedula_medico, 
                         :cedula_paciente, 
                         :estado
-                    )";
+                    ) RETURNING id_cita";
 
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
+            $stmt->execute([
                 ':fecha_inicio'    => $datos['fecha_inicio'], // Formato: 'YYYY-MM-DD HH:MM:SS'
                 ':fecha_fin'       => $datos['fecha_fin'],    // Formato: 'YYYY-MM-DD HH:MM:SS'
                 ':consultorio'     => $datos['consultorio'],
@@ -32,6 +32,7 @@ class Cita {
                 ':cedula_paciente' => $datos['cedula_paciente'],
                 ':estado'          => $datos['estado'] ?? 'PENDIENTE'
             ]);
+            return (int) $stmt->fetchColumn();
 
         } catch (PDOException $e) {
             // Código 23P01 = exclusion_violation en PostgreSQL (solapamiento detectado por la restricción EXCLUDE)
@@ -51,6 +52,7 @@ class Cita {
                        upper(c.rango_cita) AS fecha_fin,
                        c.consultorio, 
                        c.estado,
+                       c.cedula_paciente,
                        p.nombre AS paciente_nombre, 
                        p.apellido AS paciente_apellido, 
                        p.telefono AS paciente_telefono
@@ -65,16 +67,92 @@ class Cita {
         return $stmt->fetchAll();
     }
 
-    /**
-     * Cambiar estado de la cita ('CONFIRMADA', 'CANCELADA', etc.)
-     */
-    public function cambiarEstado($id_cita, $nuevo_estado) {
-        $sql = "UPDATE cita SET estado = :estado WHERE id_cita = :id_cita";
+    public function obtenerDelDia() {
+        $sql = "SELECT c.id_cita,
+                       lower(c.rango_cita) AS fecha_inicio,
+                       upper(c.rango_cita) AS fecha_fin,
+                       c.consultorio,
+                       c.estado,
+                       paciente.nombre AS paciente_nombre,
+                       paciente.apellido AS paciente_apellido,
+                       medico.nombre AS medico_nombre,
+                       medico.apellido AS medico_apellido
+                FROM cita c
+                INNER JOIN persona paciente ON c.cedula_paciente = paciente.cedula
+                INNER JOIN persona medico ON c.cedula_medico = medico.cedula
+                WHERE lower(c.rango_cita)::date = CURRENT_DATE
+                ORDER BY lower(c.rango_cita) ASC";
+
+        return $this->db->query($sql)->fetchAll();
+    }
+
+    public function obtenerEditables($limite = 10) {
+        $limite = max(1, min((int) $limite, 10));
+        $sql = "SELECT c.id_cita,
+                       lower(c.rango_cita) AS fecha_inicio,
+                       upper(c.rango_cita) AS fecha_fin,
+                       c.consultorio,
+                       c.estado,
+                       c.cedula_paciente,
+                       c.cedula_medico,
+                       paciente.nombre AS paciente_nombre,
+                       paciente.apellido AS paciente_apellido,
+                       medico.nombre AS medico_nombre,
+                       medico.apellido AS medico_apellido
+                FROM cita c
+                INNER JOIN persona paciente ON c.cedula_paciente = paciente.cedula
+                INNER JOIN persona medico ON c.cedula_medico = medico.cedula
+                WHERE c.estado IN ('PENDIENTE', 'CONFIRMADA')
+                ORDER BY lower(c.rango_cita) ASC
+                LIMIT {$limite}";
+
+        return $this->db->query($sql)->fetchAll();
+    }
+
+    public function actualizarDatos($id_cita, $cedula_paciente, $cedula_medico, $consultorio) {
+        $sql = "UPDATE cita
+                SET cedula_paciente = :cedula_paciente,
+                    cedula_medico = :cedula_medico,
+                    consultorio = :consultorio
+                WHERE id_cita = :id_cita";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            ':estado'  => $nuevo_estado,
+            ':cedula_paciente' => $cedula_paciente,
+            ':cedula_medico' => $cedula_medico,
+            ':consultorio' => $consultorio,
             ':id_cita' => $id_cita
         ]);
+    }
+
+    /**
+     * Cambiar el estado de una cita respetando las transiciones permitidas.
+     */
+    public function cambiarEstado($id_cita, $nuevo_estado) {
+        $nuevo_estado = strtoupper(trim($nuevo_estado));
+        $estadosPermitidos = ['PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'COMPLETADA'];
+        if (!in_array($nuevo_estado, $estadosPermitidos, true)) {
+            throw new Exception('Estado de cita no válido.');
+        }
+
+        $stmt = $this->db->prepare('SELECT estado FROM cita WHERE id_cita = :id_cita');
+        $stmt->execute([':id_cita' => $id_cita]);
+        $estadoActual = $stmt->fetchColumn();
+        if ($estadoActual === false) {
+            throw new Exception('La cita no existe.');
+        }
+
+        $transiciones = [
+            'PENDIENTE' => ['PENDIENTE', 'CONFIRMADA', 'CANCELADA'],
+            'CONFIRMADA' => ['CONFIRMADA', 'CANCELADA'],
+            'CANCELADA' => ['CANCELADA'],
+            'COMPLETADA' => ['COMPLETADA']
+        ];
+        if (!in_array($nuevo_estado, $transiciones[$estadoActual], true)) {
+            throw new Exception("No se puede cambiar una cita de {$estadoActual} a {$nuevo_estado}.");
+        }
+
+        $stmt = $this->db->prepare('UPDATE cita SET estado = :estado WHERE id_cita = :id_cita');
+        return $stmt->execute([':estado' => $nuevo_estado, ':id_cita' => $id_cita]);
     }
 
     /**

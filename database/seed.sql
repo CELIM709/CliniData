@@ -63,7 +63,7 @@ INSERT INTO historia_medica (cedula_paciente, fecha_creacion, antecedentes, aler
 
 -- 8. Citas (Haciendo uso de rangos tsrange)
 INSERT INTO cita (rango_cita, consultorio, estado, cedula_medico, cedula_paciente) VALUES
-('[2026-09-10 08:00:00, 2026-09-10 08:30:00)', 'Consultorio 1', 'CONFIRMADA', 'V-10111222', 'V-87654321'),
+('[2026-09-10 08:00:00, 2026-09-10 08:30:00)', 'Consultorio 1', 'COMPLETADA', 'V-10111222', 'V-87654321'),
 ('[2026-09-10 08:30:00, 2026-09-10 09:00:00)', 'Consultorio 1', 'PENDIENTE',  'V-10111222', 'V-25801947'),
 ('[2026-09-10 09:00:00, 2026-09-10 09:30:00)', 'Consultorio 2', 'CONFIRMADA', 'V-12345678', 'V-30123456');
 
@@ -83,7 +83,7 @@ INSERT INTO tipo_estudio (nombre_estudio, descripcion) VALUES
 -- 10. Estudios de laboratorio 
 INSERT INTO estudio (id_tipo_estudio, fecha, estado, id_consulta, laboratorista) VALUES
 (1, '2026-09-10 08:35:00-04', 'REALIZADO', 1, 'V-20304050'),
-(2, '2026-09-10 09:35:00-04', 'SOLICITADO', 2, 'V-20304050');
+(2, '2026-09-10 09:35:00-04', 'PENDIENTE', 2, 'V-20304050');
 
 -- 11. Resultados de Estudios
 INSERT INTO resultado (descripcion, ruta_archivo, fecha, id_estudio) VALUES

@@ -162,18 +162,34 @@
         soloNumeros('resultados_cedula_numero');
 
         // Formularios
-        document.getElementById('form-consultar-citas').addEventListener('submit', (e) => {
+        async function consultarPublico(endpoint, cedula, fecha, container, emptyMessage) {
+            const response = await fetch(`clinica-backend/api/${endpoint}?paciente=${encodeURIComponent(cedula)}&fecha_nacimiento=${encodeURIComponent(fecha)}`, { cache: 'no-store' });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) throw new Error(data.error || 'No se pudo realizar la consulta.');
+            const rows = data.data || [];
+            container.classList.remove('hidden');
+            container.innerHTML = rows.length ? rows.map((row) => `<div class="alert-box">${row.fecha_inicio || row.fecha_resultado || 'Registro'} · ${row.medico_nombre || row.nombre_estudio || ''} · ${row.estado || row.descripcion || ''}</div>`).join('') : `<div class="alert-box">${emptyMessage}</div>`;
+        }
+
+        document.getElementById('form-consultar-citas').addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Buscar citas con:', document.getElementById('citas_cedula').value,
-                        document.getElementById('citas_fecha_nacimiento').value);
-            // TODO David: reemplazar por fetch() a consultar_citas_publico.php
+            const form = e.currentTarget;
+            if (!form.reportValidity()) return;
+            const alerta = document.getElementById('alerta-citas');
+            try {
+                await consultarPublico('citas.php', document.getElementById('citas_cedula').value, document.getElementById('citas_fecha_nacimiento').value, document.getElementById('resultado-citas'), 'No hay citas registradas.');
+                alerta.classList.add('hidden');
+            } catch (error) { alerta.textContent = error.message; alerta.classList.remove('hidden'); }
         });
 
-        document.getElementById('form-consultar-resultados').addEventListener('submit', (e) => {
+        document.getElementById('form-consultar-resultados').addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Buscar resultados con:', document.getElementById('resultados_cedula').value,
-                        document.getElementById('resultados_fecha_nacimiento').value);
-            // TODO David: reemplazar por fetch() a consultar_resultados_publico.php
+            const form = e.currentTarget;
+            if (!form.reportValidity()) return;
+            const container = document.getElementById('resultado-examenes');
+            try {
+                await consultarPublico('resultados.php', document.getElementById('resultados_cedula').value, document.getElementById('resultados_fecha_nacimiento').value, container, 'No hay resultados disponibles.');
+            } catch (error) { container.classList.remove('hidden'); container.innerHTML = `<div class="alert-box">${error.message}</div>`; }
         });
     </script>
 </body>

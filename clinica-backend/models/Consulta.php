@@ -38,7 +38,7 @@ class Consulta {
                                   FROM cita 
                                   WHERE cedula_paciente = :cedula_paciente 
                                     AND cedula_medico = :cedula_medico 
-                                    AND estado IN ('PENDIENTE', 'CONFIRMADA')
+                                    AND estado = 'CONFIRMADA'
                                   ORDER BY lower(rango_cita) ASC 
                                   LIMIT 1";
                 
@@ -68,11 +68,13 @@ class Consulta {
 
             $idConsulta = $stmt->fetchColumn();
 
-            // 4. Si hay una cita asociada (manual o detectada automáticamente), confirmarla
+            // 4. La cita ya debe estar confirmada para poder registrar la consulta.
             if ($idCita !== null) {
-                $sqlCita = "UPDATE cita SET estado = 'CONFIRMADA' WHERE id_cita = :id_cita";
-                $stmtCita = $this->db->prepare($sqlCita);
+                $stmtCita = $this->db->prepare("SELECT estado FROM cita WHERE id_cita = :id_cita AND estado = 'CONFIRMADA'");
                 $stmtCita->execute([':id_cita' => $idCita]);
+                if ($stmtCita->fetchColumn() === false) {
+                    throw new Exception('La consulta solo puede asociarse a una cita confirmada.');
+                }
             }
 
             $this->db->commit();
@@ -149,5 +151,24 @@ class Consulta {
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':cedula_medico' => $cedula_medico]);
         return $stmt->fetchAll();
+    }
+
+    public function obtenerParaEstudios($limite = 10) {
+        $limite = max(1, min((int) $limite, 10));
+        $sql = "SELECT c.id_consulta, c.fecha, c.diagnostico,
+                       p_pac.nombre AS paciente_nombre,
+                       p_pac.apellido AS paciente_apellido,
+                       p_med.nombre AS medico_nombre,
+                       p_med.apellido AS medico_apellido
+                FROM consulta c
+                INNER JOIN paciente pac ON c.cedula_paciente = pac.cedula
+                INNER JOIN persona p_pac ON pac.cedula = p_pac.cedula
+                INNER JOIN medico m ON c.cedula_medico = m.cedula
+                INNER JOIN empleado e ON m.cedula = e.cedula
+                INNER JOIN persona p_med ON e.cedula = p_med.cedula
+                ORDER BY c.fecha DESC
+                LIMIT {$limite}";
+
+        return $this->db->query($sql)->fetchAll();
     }
 }
