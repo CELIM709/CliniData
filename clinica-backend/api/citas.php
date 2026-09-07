@@ -122,6 +122,11 @@ try {
                 $actualizado = true;
             }
 
+            if (!empty($input['cedula_paciente']) && !empty($input['cedula_medico']) && !empty($input['consultorio'])) {
+                $citaModel->actualizarDatos($input['id_cita'], $input['cedula_paciente'], $input['cedula_medico'], $input['consultorio']);
+                $actualizado = true;
+            }
+
             if ($actualizado) {
                 echo json_encode(['success' => true, 'mensaje' => 'Cita actualizada exitosamente.']);
                 exit;

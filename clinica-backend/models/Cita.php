@@ -93,6 +93,8 @@ class Cita {
                        upper(c.rango_cita) AS fecha_fin,
                        c.consultorio,
                        c.estado,
+                       c.cedula_paciente,
+                       c.cedula_medico,
                        paciente.nombre AS paciente_nombre,
                        paciente.apellido AS paciente_apellido,
                        medico.nombre AS medico_nombre,
@@ -105,6 +107,21 @@ class Cita {
                 LIMIT {$limite}";
 
         return $this->db->query($sql)->fetchAll();
+    }
+
+    public function actualizarDatos($id_cita, $cedula_paciente, $cedula_medico, $consultorio) {
+        $sql = "UPDATE cita
+                SET cedula_paciente = :cedula_paciente,
+                    cedula_medico = :cedula_medico,
+                    consultorio = :consultorio
+                WHERE id_cita = :id_cita";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':cedula_paciente' => $cedula_paciente,
+            ':cedula_medico' => $cedula_medico,
+            ':consultorio' => $consultorio,
+            ':id_cita' => $id_cita
+        ]);
     }
 
     /**

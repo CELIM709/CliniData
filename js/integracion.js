@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const set = (id, text) => { if ($(id)) $(id).value = text ?? ''; };
     const text = (id, content) => { if ($(id)) $(id).textContent = content ?? ''; };
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+    const appointmentOptions = new Map();
 
     async function api(endpoint, options = {}) {
         const response = await fetch(API + endpoint, {
@@ -164,18 +165,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!list) return;
         const data = await api('citas.php?action=editar');
         list.innerHTML = '';
+        appointmentOptions.clear();
         (data.data || []).slice(0, 10).forEach((item) => {
+            appointmentOptions.set(String(item.id_cita), item);
             const option = new Option(String(item.id_cita), String(item.id_cita));
             option.label = `${item.paciente_nombre || 'Paciente'} - ${item.estado} - ${String(item.fecha_inicio || '').slice(0, 16)}`;
             list.append(option);
         });
     }
+    $('id_cita')?.addEventListener('change', () => {
+        const appointment = appointmentOptions.get(val('id_cita'));
+        if (!appointment) return;
+        const [patientLetter, patientNumber] = String(appointment.cedula_paciente || '').split('-');
+        const [doctorLetter, doctorNumber] = String(appointment.cedula_medico || '').split('-');
+        set('edit_cedula_paciente_letra', patientLetter);
+        set('edit_cedula_paciente_numero', patientNumber);
+        set('edit_cedula_paciente', appointment.cedula_paciente);
+        set('edit_cedula_medico_letra', doctorLetter);
+        set('edit_cedula_medico_numero', doctorNumber);
+        set('edit_cedula_medico', appointment.cedula_medico);
+    });
     bind('#cita-edicion form', async () => {
         configureAppointmentStartLimits();
         if (!/^\d+$/.test(val('id_cita'))) throw new Error('Seleccione una cita válida.');
         if (val('edit_rango_cita_inicio') < $('edit_rango_cita_inicio').min) throw new Error('La hora de inicio no puede ser anterior a la hora actual.');
         if (timestamp('edit_rango_cita_fin') <= timestamp('edit_rango_cita_inicio')) throw new Error('La hora final debe ser posterior a la inicial.');
-        await api('citas.php', { method: 'PUT', body: JSON.stringify({ id_cita: val('id_cita'), nuevo_estado: val('edit_estado'), fecha_inicio: timestamp('edit_rango_cita_inicio'), fecha_fin: timestamp('edit_rango_cita_fin') }) });
+        await api('citas.php', { method: 'PUT', body: JSON.stringify({ id_cita: val('id_cita'), nuevo_estado: val('edit_estado'), cedula_paciente: id('edit_cedula_paciente_letra', 'edit_cedula_paciente_numero'), cedula_medico: id('edit_cedula_medico_letra', 'edit_cedula_medico_numero'), consultorio: val('edit_consultorio_numero'), fecha_inicio: timestamp('edit_rango_cita_inicio'), fecha_fin: timestamp('edit_rango_cita_fin') }) });
         await receptionSummary(); await loadTodayAppointments(); message('Cita actualizada correctamente.');
     });
 
