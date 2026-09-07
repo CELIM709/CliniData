@@ -305,13 +305,9 @@
                         <input type="hidden" id="reg_consultorio" name="consultorio">
                     </div>
                     <div class="form-group">
-                        <label for="edit_estado">Estado de la Cita</label>
-                        <!-- En la sección de Editar Cita -->
-                        <select id="reg_estado" name="estado" class="form-control" required>
-                            <option value="PENDIENTE">Programada</option> <!-- Cambiamos PROGRAMADA por PENDIENTE -->
-                            <option value="CONFIRMADA">Confirmada</option>
-                            <option value="ATENDIDA">Completada</option>  <!-- Cambiamos COMPLETADA por ATENDIDA (o el término que usen) -->
-                            <option value="CANCELADA">Cancelada</option>
+                        <label for="reg_estado">Estado de la Cita</label>
+                        <select id="reg_estado" name="estado" class="form-control" required disabled>
+                            <option value="PENDIENTE" selected>Programada</option>
                         </select>
                 </div>
             </div>
@@ -390,9 +386,7 @@
                     <div class="form-group">
                         <label for="edit_estado">Estado de la Cita</label>
                         <select id="edit_estado" name="estado" class="form-control" required>
-                            <option value="PENDIENTE">Programada</option> <!-- Cambiamos PROGRAMADA por PENDIENTE -->
                             <option value="CONFIRMADA">Confirmada</option>
-                            <option value="ATENDIDA">Completada</option>  <!-- Cambiamos COMPLETADA por ATENDIDA (o el término que usen) -->
                             <option value="CANCELADA">Cancelada</option>
                         </select>
                     </div>

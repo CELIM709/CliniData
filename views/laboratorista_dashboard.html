@@ -64,11 +64,8 @@
                     </div>
                     <div class="form-group">
                         <label for="reg_estado">Estado</label>
-                        <select id="reg_estado" name="estado" class="form-control" required>
-                            <option value="">Seleccione...</option>
-                            <option value="PENDIENTE">Pendiente</option>
-                            <option value="REALIZADO">Realizado</option>
-                            <option value="CANCELADO">Cancelado</option>
+                        <select id="reg_estado" name="estado" class="form-control" required disabled>
+                            <option value="PENDIENTE" selected>Pendiente</option>
                         </select>
                     </div>
                 </div>
@@ -92,7 +89,8 @@
             <form id="form-edicion-estudio">
                 <div class="form-group">
                     <label for="id_estudio">ID del Estudio</label>
-                    <input type="number" id="id_estudio" name="id_estudio" class="form-control" required min="1" placeholder="ID del estudio existente">
+                    <input type="text" id="id_estudio" name="id_estudio" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="estudios-disponibles" placeholder="Seleccione o escriba un ID">
+                    <datalist id="estudios-disponibles"></datalist>
                 </div>
                 
                 <div class="form-row">
@@ -126,9 +124,7 @@
                     <div class="form-group">
                         <label for="edit_estado">Estado</label>
                         <select id="edit_estado" name="estado" class="form-control" required>
-                            <option value="PENDIENTE">Pendiente</option>
-                            <option value="REALIZADO" selected>Realizado</option>
-                            <option value="CANCELADO">Cancelado</option>
+                            <option value="CANCELADA">Cancelada</option>
                         </select>
                     </div>
                 </div>

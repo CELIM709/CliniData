@@ -23,6 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function id(letter, number) { return `${val(letter)}-${val(number)}`; }
     function timestamp(field) { return val(field).replace('T', ' '); }
+    function currentDateTimeLocal() {
+        const now = new Date();
+        const pad = (value) => String(value).padStart(2, '0');
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    }
+    function configureAppointmentStartLimits() {
+        ['reg_rango_cita_inicio', 'edit_rango_cita_inicio'].forEach((field) => {
+            $(field)?.setAttribute('min', currentDateTimeLocal());
+        });
+    }
     function phone(prefix, number) { return val(number) ? `${val(prefix)}-${val(number)}` : ''; }
     function splitPhone(value, prefix, number) {
         const parts = String(value || '').split('-');
@@ -67,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDoctorAppointments(user) {
         const list = $('mis-citas-lista'); if (!list) return;
         const appointments = (await api(`citas.php?medico=${encodeURIComponent(user.cedula)}`)).data || [];
-        list.innerHTML = appointments.length ? appointments.map((item) => `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 12px 8px;">${escapeHtml(item.id_cita)}</td><td style="padding: 12px 8px;">${escapeHtml(`${item.paciente_nombre} ${item.paciente_apellido}`)}</td><td style="padding: 12px 8px;">${escapeHtml(String(item.fecha_inicio || '').slice(0, 16))} - ${escapeHtml(String(item.fecha_fin || '').slice(11, 16))}</td><td style="padding: 12px 8px;">${escapeHtml(item.consultorio)}</td><td style="padding: 12px 8px;">${escapeHtml(item.estado)}</td><td style="padding: 12px 8px;"><button type="button" class="btn btn-outline" data-usar-cita="${escapeHtml(item.id_cita)}" data-cedula-paciente="${escapeHtml(item.cedula_paciente)}" style="padding: 8px 12px;">Usar cita</button></td></tr>`).join('') : '<tr><td colspan="6" style="padding: 14px 8px;">No tienes citas registradas.</td></tr>';
+        list.innerHTML = appointments.length ? appointments.map((item) => `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 12px 8px;">${escapeHtml(item.id_cita)}</td><td style="padding: 12px 8px;">${escapeHtml(`${item.paciente_nombre} ${item.paciente_apellido}`)}</td><td style="padding: 12px 8px;">${escapeHtml(String(item.fecha_inicio || '').slice(0, 16))} - ${escapeHtml(String(item.fecha_fin || '').slice(11, 16))}</td><td style="padding: 12px 8px;">${escapeHtml(item.consultorio)}</td><td style="padding: 12px 8px;">${escapeHtml(item.estado)}</td><td style="padding: 12px 8px;">${item.estado === 'CONFIRMADA' ? `<button type="button" class="btn btn-outline" data-usar-cita="${escapeHtml(item.id_cita)}" data-cedula-paciente="${escapeHtml(item.cedula_paciente)}" style="padding: 8px 12px;">Usar cita</button>` : 'Sin acciones'}</td></tr>`).join('') : '<tr><td colspan="6" style="padding: 14px 8px;">No tienes citas registradas.</td></tr>';
     }
 
     $('mis-citas-lista')?.addEventListener('click', (event) => {
@@ -141,12 +151,17 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { message(error.message, true); }
     });
 
+    configureAppointmentStartLimits();
     bind('#cita-registro form', async (form) => {
+        configureAppointmentStartLimits();
+        if (val('reg_rango_cita_inicio') < $('reg_rango_cita_inicio').min) throw new Error('La hora de inicio no puede ser anterior a la hora actual.');
         if (timestamp('reg_rango_cita_fin') <= timestamp('reg_rango_cita_inicio')) throw new Error('La hora final debe ser posterior a la inicial.');
         const result = await api('citas.php', { method: 'POST', body: JSON.stringify({ cedula_paciente: id('reg_cedula_paciente_letra', 'reg_cedula_paciente_numero'), cedula_medico: id('reg_cedula_medico_letra', 'reg_cedula_medico_numero'), consultorio: val('reg_consultorio_numero'), fecha_inicio: timestamp('reg_rango_cita_inicio'), fecha_fin: timestamp('reg_rango_cita_fin') }) });
         form.reset(); await receptionSummary(); await loadTodayAppointments(); text('cita-registrada', `Cita registrada correctamente. ID de cita: ${result.id_cita}`); $('cita-registrada')?.classList.remove('hidden');
     });
     bind('#cita-edicion form', async () => {
+        configureAppointmentStartLimits();
+        if (val('edit_rango_cita_inicio') < $('edit_rango_cita_inicio').min) throw new Error('La hora de inicio no puede ser anterior a la hora actual.');
         if (timestamp('edit_rango_cita_fin') <= timestamp('edit_rango_cita_inicio')) throw new Error('La hora final debe ser posterior a la inicial.');
         await api('citas.php', { method: 'PUT', body: JSON.stringify({ id_cita: val('id_cita'), nuevo_estado: val('edit_estado'), fecha_inicio: timestamp('edit_rango_cita_inicio'), fecha_fin: timestamp('edit_rango_cita_fin') }) });
         await receptionSummary(); await loadTodayAppointments(); message('Cita actualizada correctamente.');
@@ -189,11 +204,32 @@ document.addEventListener('DOMContentLoaded', () => {
     bind('#form-registro-consulta', async (form) => { const user = await session(); const payload = { cedula_paciente: id('cons_cedula_paciente_letra', 'cons_cedula_paciente_numero'), cedula_medico: user?.cedula, diagnostico: val('cons_diagnostico'), observaciones: val('cons_observaciones'), costo: val('cons_costo') }; if (val('cons_id_cita')) payload.id_cita = val('cons_id_cita'); const result = await api('consultas.php', { method: 'POST', body: JSON.stringify(payload) }); set('rec_id_consulta', result.id_consulta); form.reset(); message('Consulta registrada correctamente.'); });
     bind('#form-registro-receta', async (form) => { await api('recetas.php', { method: 'POST', body: JSON.stringify({ id_consulta: val('rec_id_consulta'), medicamentos: [{ id_medicamento: val('rec_id_medicamento'), dosis: val('rec_dosis'), frecuencia: val('rec_frecuencia'), duracion: val('rec_duracion'), indicaciones: val('rec_indicaciones') }] }) }); form.reset(); message('Receta registrada correctamente.'); });
 
+    async function loadMedications() {
+        const select = $('rec_id_medicamento');
+        if (!select) return;
+        const data = await api('medicamentos.php');
+        select.innerHTML = '<option value="">Seleccione...</option>';
+        (data.data || []).forEach((item) => {
+            const details = [item.laboratorio, item.presentacion].filter(Boolean).join(' - ');
+            select.add(new Option(details ? `${item.nombre} (${details})` : item.nombre, item.id_medicamento));
+        });
+    }
+    async function loadStudyOptions() {
+        const list = $('estudios-disponibles');
+        if (!list) return;
+        const data = await api('estudios.php');
+        list.innerHTML = '';
+        (data.data || []).slice(0, 10).forEach((item) => {
+            const option = new Option(String(item.id_estudio), String(item.id_estudio));
+            option.label = `${item.nombre_estudio || item.tipo || 'Estudio'} - Consulta ${item.id_consulta}`;
+            list.append(option);
+        });
+    }
     async function loadStudyTypes() { if (!$('reg_tipo')) return; const data = await api('tipos_estudio.php'); $('reg_tipo').innerHTML = '<option value="">Seleccione...</option>'; (data.data || []).forEach((item) => $('reg_tipo').add(new Option(item.nombre_estudio, item.id_tipo_estudio))); }
     bind('#form-registro-estudio', async (form) => { await api('estudios.php?action=solicitar', { method: 'POST', body: JSON.stringify({ id_consulta: val('reg_id_consulta'), tipos: [val('reg_tipo')] }) }); form.reset(); message('Estudio solicitado correctamente.'); });
-    bind('#form-edicion-estudio', async () => { await api('estudios.php', { method: 'PUT', body: JSON.stringify({ id_estudio: val('id_estudio'), estado: val('edit_estado') }) }); message('Estudio actualizado correctamente.'); });
+    bind('#form-edicion-estudio', async () => { if (!/^\d+$/.test(val('id_estudio'))) throw new Error('Seleccione un estudio válido.'); await api('estudios.php', { method: 'PUT', body: JSON.stringify({ id_estudio: val('id_estudio'), estado: val('edit_estado') }) }); message('Estudio actualizado correctamente.'); });
     bind('#form-registro-resultado', async (form) => { const data = new FormData(form); await api('resultados.php', { method: 'POST', body: data }); form.reset(); message('Resultado cargado correctamente.'); });
 
-    session().then((user) => Promise.all([receptionSummary().catch(() => {}), loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]));
+    session().then((user) => Promise.all([receptionSummary().catch(() => {}), loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), loadMedications().catch(() => {}), loadStudyOptions().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]));
     async function loadDoctor(user) { if (!$('perfil_nombre_texto')) return; const doctor = (await api(`medicos.php?cedula=${encodeURIComponent(user.cedula)}`)).data || {}; set('perfil_nombre_texto', user.nombre); set('perfil_nombre', user.nombre); set('perfil_cedula_numero', user.cedula.split('-')[1]); set('perfil_cedula', user.cedula); set('perfil_carnet_numero', String(doctor.carnet_medico || '').replace(/^M\.P\.P\.S\.\s*/i, '')); set('perfil_carnet', doctor.carnet_medico); set('perfil_tarifa', doctor.tarifa); set('perfil_especialidad', doctor.especialidades); }
 });

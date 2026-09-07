@@ -160,7 +160,7 @@ class Empleado {
             'total_pacientes'     => $this->db->query("SELECT COUNT(*) FROM paciente")->fetchColumn(),
             'citas_hoy'           => $this->db->query("SELECT COUNT(*) FROM cita WHERE lower(rango_cita)::date = CURRENT_DATE")->fetchColumn(),
             'consultas_mes'       => $this->db->query("SELECT COUNT(*) FROM consulta WHERE date_trunc('month', fecha) = date_trunc('month', CURRENT_DATE)")->fetchColumn(),
-            'estudios_pendientes' => $this->db->query("SELECT COUNT(*) FROM estudio WHERE estado = 'SOLICITADO'")->fetchColumn()
+            'estudios_pendientes' => $this->db->query("SELECT COUNT(*) FROM estudio WHERE estado = 'PENDIENTE'")->fetchColumn()
         ];
     }
 }

@@ -147,17 +147,17 @@ try {
                 break;
             }
 
-            // ACCIÓN C: Cambiar estado arbitrario (SOLICITADO, REALIZADO, CANCELADO)
+            // ACCIÓN C: Cancelar un estudio pendiente
             if ($action === 'cambiar_estado') {
                 $idEstudio = $input['id_estudio'] ?? null;
                 $estado = strtoupper($input['estado'] ?? '');
 
-                $estadosValidos = ['SOLICITADO', 'REALIZADO', 'CANCELADO'];
+                $estadosValidos = ['CANCELADA'];
                 if (!$idEstudio || !in_array($estado, $estadosValidos)) {
                     http_response_code(400);
                     echo json_encode([
                         'success' => false, 
-                        'error' => 'Estado no válido. Debe ser SOLICITADO, REALIZADO o CANCELADO.'
+                        'error' => 'Solo se puede cancelar un estudio pendiente.'
                     ]);
                     exit;
                 }

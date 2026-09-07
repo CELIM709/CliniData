@@ -32,6 +32,11 @@ class Estudio {
                 ]);
             }
 
+            $stmtCita = $this->db->prepare("UPDATE cita SET estado = 'COMPLETADA'
+                WHERE id_cita = (SELECT id_cita FROM consulta WHERE id_consulta = :id_consulta)
+                  AND estado = 'CONFIRMADA'");
+            $stmtCita->execute([':id_consulta' => $id_consulta]);
+
             $this->db->commit();
             return true;
 
@@ -48,23 +53,46 @@ class Estudio {
         $sql = "UPDATE estudio 
                 SET estado = 'REALIZADO', 
                     laboratorista = :laboratorista 
-                WHERE id_estudio = :id_estudio";
+                WHERE id_estudio = :id_estudio
+                  AND estado = 'PENDIENTE'";
 
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $stmt->execute([
             ':laboratorista' => $cedula_laboratorista,
             ':id_estudio'     => $id_estudio
         ]);
+        return $stmt->rowCount() > 0;
     }
 
     /**
-     * Actualizar el estado de un estudio (SOLICITADO, REALIZADO, CANCELADO)
+     * Actualizar el estado de un estudio respetando sus transiciones.
      */
     public function cambiarEstado($id_estudio, $estado) {
+        $estado = strtoupper(trim($estado));
+        if (!in_array($estado, ['PENDIENTE', 'REALIZADO', 'CANCELADA'], true)) {
+            throw new Exception('Estado de estudio no válido.');
+        }
+
+        $stmt = $this->db->prepare('SELECT estado FROM estudio WHERE id_estudio = :id_estudio');
+        $stmt->execute([':id_estudio' => $id_estudio]);
+        $estadoActual = $stmt->fetchColumn();
+        if ($estadoActual === false) {
+            throw new Exception('El estudio no existe.');
+        }
+
+        $transiciones = [
+            'PENDIENTE' => ['PENDIENTE', 'CANCELADA'],
+            'REALIZADO' => ['REALIZADO'],
+            'CANCELADA' => ['CANCELADA']
+        ];
+        if (!in_array($estado, $transiciones[$estadoActual], true)) {
+            throw new Exception("No se puede cambiar un estudio de {$estadoActual} a {$estado}.");
+        }
+
         $sql = "UPDATE estudio SET estado = :estado WHERE id_estudio = :id_estudio";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            ':estado'     => $estado,
+            ':estado'      => $estado,
             ':id_estudio' => $id_estudio
         ]);
     }
@@ -85,7 +113,7 @@ class Estudio {
                 INNER JOIN medico med ON c.cedula_medico = med.cedula
                 INNER JOIN empleado emp_med ON med.cedula = emp_med.cedula
                 INNER JOIN persona p_med ON emp_med.cedula = p_med.cedula
-                WHERE e.estado = 'SOLICITADO'
+                WHERE e.estado = 'PENDIENTE'
                 ORDER BY e.fecha ASC";
 
         $stmt = $this->db->query($sql);

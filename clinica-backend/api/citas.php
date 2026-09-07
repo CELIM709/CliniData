@@ -86,6 +86,8 @@ try {
                 }
             }
 
+            // Las citas nuevas siempre comienzan como programadas.
+            $input['estado'] = 'PENDIENTE';
             $idCita = $citaModel->agendarCita($input);
 
             http_response_code(201);

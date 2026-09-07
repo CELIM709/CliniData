@@ -38,7 +38,7 @@ class Consulta {
                                   FROM cita 
                                   WHERE cedula_paciente = :cedula_paciente 
                                     AND cedula_medico = :cedula_medico 
-                                    AND estado IN ('PENDIENTE', 'CONFIRMADA')
+                                    AND estado = 'CONFIRMADA'
                                   ORDER BY lower(rango_cita) ASC 
                                   LIMIT 1";
                 
@@ -68,11 +68,13 @@ class Consulta {
 
             $idConsulta = $stmt->fetchColumn();
 
-            // 4. Si hay una cita asociada (manual o detectada automáticamente), confirmarla
+            // 4. La cita ya debe estar confirmada para poder registrar la consulta.
             if ($idCita !== null) {
-                $sqlCita = "UPDATE cita SET estado = 'CONFIRMADA' WHERE id_cita = :id_cita";
-                $stmtCita = $this->db->prepare($sqlCita);
+                $stmtCita = $this->db->prepare("SELECT estado FROM cita WHERE id_cita = :id_cita AND estado = 'CONFIRMADA'");
                 $stmtCita->execute([':id_cita' => $idCita]);
+                if ($stmtCita->fetchColumn() === false) {
+                    throw new Exception('La consulta solo puede asociarse a una cita confirmada.');
+                }
             }
 
             $this->db->commit();

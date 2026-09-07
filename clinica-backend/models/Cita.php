@@ -87,15 +87,34 @@ class Cita {
     }
 
     /**
-     * Cambiar estado de la cita ('CONFIRMADA', 'CANCELADA', etc.)
+     * Cambiar el estado de una cita respetando las transiciones permitidas.
      */
     public function cambiarEstado($id_cita, $nuevo_estado) {
-        $sql = "UPDATE cita SET estado = :estado WHERE id_cita = :id_cita";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            ':estado'  => $nuevo_estado,
-            ':id_cita' => $id_cita
-        ]);
+        $nuevo_estado = strtoupper(trim($nuevo_estado));
+        $estadosPermitidos = ['PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'COMPLETADA'];
+        if (!in_array($nuevo_estado, $estadosPermitidos, true)) {
+            throw new Exception('Estado de cita no válido.');
+        }
+
+        $stmt = $this->db->prepare('SELECT estado FROM cita WHERE id_cita = :id_cita');
+        $stmt->execute([':id_cita' => $id_cita]);
+        $estadoActual = $stmt->fetchColumn();
+        if ($estadoActual === false) {
+            throw new Exception('La cita no existe.');
+        }
+
+        $transiciones = [
+            'PENDIENTE' => ['PENDIENTE', 'CONFIRMADA', 'CANCELADA'],
+            'CONFIRMADA' => ['CONFIRMADA', 'CANCELADA'],
+            'CANCELADA' => ['CANCELADA'],
+            'COMPLETADA' => ['COMPLETADA']
+        ];
+        if (!in_array($nuevo_estado, $transiciones[$estadoActual], true)) {
+            throw new Exception("No se puede cambiar una cita de {$estadoActual} a {$nuevo_estado}.");
+        }
+
+        $stmt = $this->db->prepare('UPDATE cita SET estado = :estado WHERE id_cita = :id_cita');
+        return $stmt->execute([':estado' => $nuevo_estado, ':id_cita' => $id_cita]);
     }
 
     /**
