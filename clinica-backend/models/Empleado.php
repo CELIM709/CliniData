@@ -4,6 +4,7 @@ require_once __DIR__ . '/Persona.php';
 
 class Empleado {
     private $db;
+    private $personaModel;
 
     public function __construct() {
         $this->db = Conexion::conectar();
