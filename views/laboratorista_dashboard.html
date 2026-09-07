@@ -38,7 +38,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="reg_id_consulta">ID de Consulta (Asociada)</label>
-                        <input type="number" id="reg_id_consulta" name="id_consulta" class="form-control" required>
+                        <input type="text" id="reg_id_consulta" name="id_consulta" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="consultas-disponibles" placeholder="Seleccione o escriba un ID">
+                        <datalist id="consultas-disponibles"></datalist>
                     </div>
                     <div class="form-group">
                         <label for="reg_laboratorista_numero">Cédula del Laboratorista</label>
@@ -146,7 +147,8 @@
             <form id="form-registro-resultado" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="res_id_estudio">ID del Estudio Asociado</label>
-                    <input type="number" id="res_id_estudio" name="id_estudio" class="form-control" required>
+                    <input type="text" id="res_id_estudio" name="id_estudio" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="estudios-resultado-disponibles" placeholder="Seleccione o escriba un ID">
+                    <datalist id="estudios-resultado-disponibles"></datalist>
                 </div>
 
                 <div class="form-group">

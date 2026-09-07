@@ -152,4 +152,23 @@ class Consulta {
         $stmt->execute([':cedula_medico' => $cedula_medico]);
         return $stmt->fetchAll();
     }
+
+    public function obtenerParaEstudios($limite = 10) {
+        $limite = max(1, min((int) $limite, 10));
+        $sql = "SELECT c.id_consulta, c.fecha, c.diagnostico,
+                       p_pac.nombre AS paciente_nombre,
+                       p_pac.apellido AS paciente_apellido,
+                       p_med.nombre AS medico_nombre,
+                       p_med.apellido AS medico_apellido
+                FROM consulta c
+                INNER JOIN paciente pac ON c.cedula_paciente = pac.cedula
+                INNER JOIN persona p_pac ON pac.cedula = p_pac.cedula
+                INNER JOIN medico m ON c.cedula_medico = m.cedula
+                INNER JOIN empleado e ON m.cedula = e.cedula
+                INNER JOIN persona p_med ON e.cedula = p_med.cedula
+                ORDER BY c.fecha DESC
+                LIMIT {$limite}";
+
+        return $this->db->query($sql)->fetchAll();
+    }
 }

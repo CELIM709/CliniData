@@ -227,21 +227,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     async function loadStudyOptions() {
-        const list = $('estudios-disponibles');
-        if (!list) return;
+        const lists = [$('estudios-disponibles'), $('estudios-resultado-disponibles')].filter(Boolean);
+        if (!lists.length) return;
         const data = await api('estudios.php');
+        lists.forEach((list) => {
+            list.innerHTML = '';
+            (data.data || []).slice(0, 10).forEach((item) => {
+                const option = new Option(String(item.id_estudio), String(item.id_estudio));
+                option.label = `${item.nombre_estudio || item.tipo || 'Estudio'} - Consulta ${item.id_consulta}`;
+                list.append(option);
+            });
+        });
+    }
+    async function loadConsultationOptions() {
+        const list = $('consultas-disponibles');
+        if (!list) return;
+        const data = await api('consultas.php?action=para_estudio');
         list.innerHTML = '';
         (data.data || []).slice(0, 10).forEach((item) => {
-            const option = new Option(String(item.id_estudio), String(item.id_estudio));
-            option.label = `${item.nombre_estudio || item.tipo || 'Estudio'} - Consulta ${item.id_consulta}`;
+            const option = new Option(String(item.id_consulta), String(item.id_consulta));
+            option.label = `${item.paciente_nombre || 'Paciente'} - ${item.diagnostico || 'Consulta'} - ${String(item.fecha || '').slice(0, 16)}`;
             list.append(option);
         });
     }
     async function loadStudyTypes() { if (!$('reg_tipo')) return; const data = await api('tipos_estudio.php'); $('reg_tipo').innerHTML = '<option value="">Seleccione...</option>'; (data.data || []).forEach((item) => $('reg_tipo').add(new Option(item.nombre_estudio, item.id_tipo_estudio))); }
-    bind('#form-registro-estudio', async (form) => { await api('estudios.php?action=solicitar', { method: 'POST', body: JSON.stringify({ id_consulta: val('reg_id_consulta'), tipos: [val('reg_tipo')] }) }); form.reset(); message('Estudio solicitado correctamente.'); });
+    bind('#form-registro-estudio', async (form) => { if (!/^\d+$/.test(val('reg_id_consulta'))) throw new Error('Seleccione una consulta válida.'); await api('estudios.php?action=solicitar', { method: 'POST', body: JSON.stringify({ id_consulta: val('reg_id_consulta'), tipos: [val('reg_tipo')] }) }); form.reset(); message('Estudio solicitado correctamente.'); });
     bind('#form-edicion-estudio', async () => { if (!/^\d+$/.test(val('id_estudio'))) throw new Error('Seleccione un estudio válido.'); await api('estudios.php', { method: 'PUT', body: JSON.stringify({ id_estudio: val('id_estudio'), estado: val('edit_estado') }) }); message('Estudio actualizado correctamente.'); });
-    bind('#form-registro-resultado', async (form) => { const data = new FormData(form); await api('resultados.php', { method: 'POST', body: data }); form.reset(); message('Resultado cargado correctamente.'); });
+    bind('#form-registro-resultado', async (form) => { if (!/^\d+$/.test(val('res_id_estudio'))) throw new Error('Seleccione un estudio válido.'); const data = new FormData(form); await api('resultados.php', { method: 'POST', body: data }); form.reset(); message('Resultado cargado correctamente.'); });
 
-    session().then((user) => Promise.all([receptionSummary().catch(() => {}), loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), loadMedications().catch(() => {}), loadStudyOptions().catch(() => {}), loadAppointmentOptions().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]));
+    session().then((user) => Promise.all([receptionSummary().catch(() => {}), loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), loadMedications().catch(() => {}), loadStudyOptions().catch(() => {}), loadConsultationOptions().catch(() => {}), loadAppointmentOptions().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]));
     async function loadDoctor(user) { if (!$('perfil_nombre_texto')) return; const doctor = (await api(`medicos.php?cedula=${encodeURIComponent(user.cedula)}`)).data || {}; set('perfil_nombre_texto', user.nombre); set('perfil_nombre', user.nombre); set('perfil_cedula_numero', user.cedula.split('-')[1]); set('perfil_cedula', user.cedula); set('perfil_carnet_numero', String(doctor.carnet_medico || '').replace(/^M\.P\.P\.S\.\s*/i, '')); set('perfil_carnet', doctor.carnet_medico); set('perfil_tarifa', doctor.tarifa); set('perfil_especialidad', doctor.especialidades); }
 });
