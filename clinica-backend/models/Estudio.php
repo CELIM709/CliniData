@@ -14,7 +14,7 @@ class Estudio {
      * @param int $id_consulta
      * @param array $tiposEstudios Arreglo con los IDs de tipos de estudio (Ej: [1, 3, 5])
      */
-    public function solicitarEstudios($id_consulta, array $tiposEstudios) {
+    public function solicitarEstudios($id_consulta, array $tiposEstudios, $cedulaLaboratorista = null) {
         if (empty($tiposEstudios)) {
             return false;
         }
@@ -22,13 +22,15 @@ class Estudio {
         try {
             $this->db->beginTransaction();
 
-            $sql = "INSERT INTO estudio (id_tipo_estudio, id_consulta) VALUES (:id_tipo_estudio, :id_consulta)";
+                $sql = "INSERT INTO estudio (id_tipo_estudio, id_consulta, laboratorista)
+                    VALUES (:id_tipo_estudio, :id_consulta, :laboratorista)";
             $stmt = $this->db->prepare($sql);
 
             foreach ($tiposEstudios as $id_tipo_estudio) {
                 $stmt->execute([
                     ':id_tipo_estudio' => $id_tipo_estudio,
-                    ':id_consulta'     => $id_consulta
+                    ':id_consulta'     => $id_consulta,
+                    ':laboratorista'   => $cedulaLaboratorista
                 ]);
             }
 

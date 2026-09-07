@@ -44,11 +44,11 @@
                     <div class="form-group">
                         <label for="reg_laboratorista_numero">Cédula del Laboratorista</label>
                         <div style="display:flex; gap:8px;">
-                            <select id="reg_laboratorista_letra" class="form-control" style="max-width:80px;">
+                            <select id="reg_laboratorista_letra" class="form-control" style="max-width:80px;" disabled>
                                 <option value="V">V</option>
                                 <option value="E">E</option>
                             </select>
-                            <input type="text" id="reg_laboratorista_numero" class="form-control" required
+                            <input type="text" id="reg_laboratorista_numero" class="form-control" required readonly
                                    inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 55555555">
                         </div>
                         <small id="reg_laboratorista_error" class="hidden" style="color:#dc3545; font-size:12px;">
