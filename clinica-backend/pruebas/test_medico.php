@@ -28,24 +28,24 @@ try {
 
     // 3. Datos del Médico
     $datosPersona = [
-        'cedula'           => 'V-55443322',
-        'nombre'           => 'Dr. Roberto',
+        'cedula'           => 'V-11111111',
+        'nombre'           => 'One Puccino',
         'apellido'         => 'Mendoza',
         'fecha_nacimiento' => '1982-08-25',
         'telefono'         => '04121112233',
-        'email'            => 'roberto.mendoza@clinica.com',
+        'email'            => 'one.mendoza@email.com',
         'direccion'        => 'Av. Las Delicias'
     ];
 
     $datosEmpleado = [
         'salario'          => 1200.00,
         'fecha_contratado' => '2026-02-01',
-        'clave_acceso'     => 'DocPass2026*',
+        'clave_acceso'     => '12345',
         'id_horario'       => $idHorario
     ];
 
     $datosMedico = [
-        'carnet_medico' => 'MPPS-987654',
+        'carnet_medico' => 'MPPS-987111',
         'tarifa'        => 45.00
     ];
 
@@ -54,7 +54,7 @@ try {
         echo "¡Médico registrado con éxito y especialidad vinculada!\n\n";
 
         // 5. Consultar información completa
-        $medicoGuardado = $medicoModel->obtenerPorCedula('V-55443322');
+        $medicoGuardado = $medicoModel->obtenerPorCedula('V-11111111');
         print_r($medicoGuardado);
     }
 

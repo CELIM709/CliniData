@@ -18,13 +18,13 @@ try {
 
     // 2. Datos para registrar una Recepcionista
     $datosPersona = [
-        'cedula'           => 'V-99887766',
-        'nombre'           => 'Ana',
-        'apellido'         => 'Rojas',
+        'cedula'           => 'V-99999999',
+        'nombre'           => 'Ayuda',
+        'apellido'         => 'Dios',
         'fecha_nacimiento' => '1990-03-12',
         'telefono'         => '04165554433',
-        'email'            => 'ana.rojas@clinica.com',
-        'direccion'        => 'Av. Principal, Edif. Centro'
+        'email'            => 'ayuda.dios@email.com',
+        'direccion'        => 'Av. Principal, Edif. GOD'
     ];
 
     $datosEmpleado = [
@@ -47,7 +47,7 @@ try {
 
     // 4. Prueba A: Login con contraseña CORRECTA
     echo "--- Prueba A: Credenciales correctas ---\n";
-    $usuarioLogueado = $empleadoModel->login('V-99887766', '12345');
+    $usuarioLogueado = $empleadoModel->login('V-99999999', '12345');
 
     if ($usuarioLogueado) {
         echo "Login exitoso. Bienvenido/a {$usuarioLogueado['nombre']} ({$usuarioLogueado['rol']})\n";

@@ -1,11 +1,13 @@
 <?php
 require_once __DIR__ . '/../config/Conexion.php';
+require_once __DIR__ . '/Persona.php';
 
 class Empleado {
     private $db;
 
     public function __construct() {
         $this->db = Conexion::conectar();
+        $this->personaModel = new Persona($this->db);
     }
 
     /**
@@ -17,24 +19,8 @@ class Empleado {
 
             $cedula = $datosPersona['cedula'];
 
-            // 1. Verificar o Insertar Persona
-            $sqlCheckPersona = "SELECT cedula FROM persona WHERE cedula = :cedula";
-            $stmtPersona = $this->db->prepare($sqlCheckPersona);
-            $stmtPersona->execute([':cedula' => $cedula]);
-
-            if (!$stmtPersona->fetch()) {
-                $sqlPersona = "INSERT INTO persona (cedula, nombre, apellido, fecha_nacimiento, telefono, email, direccion)
-                               VALUES (:cedula, :nombre, :apellido, :fecha_nacimiento, :telefono, :email, :direccion)";
-                $stmtInsPersona = $this->db->prepare($sqlPersona);
-                $stmtInsPersona->execute([
-                    ':cedula'           => $datosPersona['cedula'],
-                    ':nombre'           => $datosPersona['nombre'],
-                    ':apellido'         => $datosPersona['apellido'],
-                    ':fecha_nacimiento' => $datosPersona['fecha_nacimiento'],
-                    ':telefono'         => $datosPersona['telefono'] ?? null,
-                    ':email'            => $datosPersona['email'] ?? null,
-                    ':direccion'        => $datosPersona['direccion'] ?? null
-                ]);
+            if (!$this->personaModel->existe($cedula)) {
+                $this->personaModel->crear($datosPersona);
             }
 
             // 2. Verificar que no sea ya un empleado

@@ -24,6 +24,14 @@ class Persona {
         return $stmt->fetch();
     }
 
+    // Verificar si una persona existe
+    public function existe($cedula) {
+        $sql = "SELECT 1 FROM persona WHERE cedula = :cedula";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':cedula' => $cedula]);
+        return (bool) $stmt->fetch();
+    }
+
     // Registrar una nueva persona
     public function crear($datos) {
         $sql = "INSERT INTO persona (cedula, nombre, apellido, fecha_nacimiento, telefono, email, direccion)

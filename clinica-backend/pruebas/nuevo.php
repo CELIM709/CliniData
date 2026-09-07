@@ -10,17 +10,17 @@ $historiaModel = new HistoriaMedica();
 
 // Datos para la prueba de registro integral
 $datosPersona = [
-    'cedula'           => 'V-24681357',
-    'nombre'           => 'Elena',
-    'apellido'         => 'Blanco',
+    'cedula'           => 'V-88888888',
+    'nombre'           => 'Ocho',
+    'apellido'         => 'Hachi',
     'fecha_nacimiento' => '1998-05-14',
     'telefono'         => '04149998877',
-    'email'            => 'elena.blanco@email.com',
-    'direccion'        => 'Urb. El Bosque, Calle 4'
+    'email'            => 'ocho.hachi@email.com',
+    'direccion'        => 'Urb. El Bosque, Calle ocho'
 ];
 
 $datosPaciente = [
-    'genero'      => 'F',
+    'genero'      => 'M',
     'tipo_sangre' => 'O+'
 ];
 
