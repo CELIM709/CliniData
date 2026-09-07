@@ -159,8 +159,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await api('citas.php', { method: 'POST', body: JSON.stringify({ cedula_paciente: id('reg_cedula_paciente_letra', 'reg_cedula_paciente_numero'), cedula_medico: id('reg_cedula_medico_letra', 'reg_cedula_medico_numero'), consultorio: val('reg_consultorio_numero'), fecha_inicio: timestamp('reg_rango_cita_inicio'), fecha_fin: timestamp('reg_rango_cita_fin') }) });
         form.reset(); await receptionSummary(); await loadTodayAppointments(); text('cita-registrada', `Cita registrada correctamente. ID de cita: ${result.id_cita}`); $('cita-registrada')?.classList.remove('hidden');
     });
+    async function loadAppointmentOptions() {
+        const list = $('citas-disponibles');
+        if (!list) return;
+        const data = await api('citas.php?action=editar');
+        list.innerHTML = '';
+        (data.data || []).slice(0, 10).forEach((item) => {
+            const option = new Option(String(item.id_cita), String(item.id_cita));
+            option.label = `${item.paciente_nombre || 'Paciente'} - ${item.estado} - ${String(item.fecha_inicio || '').slice(0, 16)}`;
+            list.append(option);
+        });
+    }
     bind('#cita-edicion form', async () => {
         configureAppointmentStartLimits();
+        if (!/^\d+$/.test(val('id_cita'))) throw new Error('Seleccione una cita válida.');
         if (val('edit_rango_cita_inicio') < $('edit_rango_cita_inicio').min) throw new Error('La hora de inicio no puede ser anterior a la hora actual.');
         if (timestamp('edit_rango_cita_fin') <= timestamp('edit_rango_cita_inicio')) throw new Error('La hora final debe ser posterior a la inicial.');
         await api('citas.php', { method: 'PUT', body: JSON.stringify({ id_cita: val('id_cita'), nuevo_estado: val('edit_estado'), fecha_inicio: timestamp('edit_rango_cita_inicio'), fecha_fin: timestamp('edit_rango_cita_fin') }) });
@@ -230,6 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bind('#form-edicion-estudio', async () => { if (!/^\d+$/.test(val('id_estudio'))) throw new Error('Seleccione un estudio válido.'); await api('estudios.php', { method: 'PUT', body: JSON.stringify({ id_estudio: val('id_estudio'), estado: val('edit_estado') }) }); message('Estudio actualizado correctamente.'); });
     bind('#form-registro-resultado', async (form) => { const data = new FormData(form); await api('resultados.php', { method: 'POST', body: data }); form.reset(); message('Resultado cargado correctamente.'); });
 
-    session().then((user) => Promise.all([receptionSummary().catch(() => {}), loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), loadMedications().catch(() => {}), loadStudyOptions().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]));
+    session().then((user) => Promise.all([receptionSummary().catch(() => {}), loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), loadMedications().catch(() => {}), loadStudyOptions().catch(() => {}), loadAppointmentOptions().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]));
     async function loadDoctor(user) { if (!$('perfil_nombre_texto')) return; const doctor = (await api(`medicos.php?cedula=${encodeURIComponent(user.cedula)}`)).data || {}; set('perfil_nombre_texto', user.nombre); set('perfil_nombre', user.nombre); set('perfil_cedula_numero', user.cedula.split('-')[1]); set('perfil_cedula', user.cedula); set('perfil_carnet_numero', String(doctor.carnet_medico || '').replace(/^M\.P\.P\.S\.\s*/i, '')); set('perfil_carnet', doctor.carnet_medico); set('perfil_tarifa', doctor.tarifa); set('perfil_especialidad', doctor.especialidades); }
 });

@@ -336,7 +336,8 @@
             <form id="form-edicion-cita">
                 <div class="form-group">
                     <label for="id_cita">ID de la Cita</label>
-                    <input type="number" id="id_cita" name="id_cita" class="form-control" required min="1" placeholder="ID de la cita existente">
+                    <input type="text" id="id_cita" name="id_cita" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="citas-disponibles" placeholder="Seleccione o escriba un ID">
+                    <datalist id="citas-disponibles"></datalist>
                 </div>
                 
                 <div class="form-row">

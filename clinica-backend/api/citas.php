@@ -49,6 +49,11 @@ try {
                 break;
             }
 
+            if (isset($_GET['action']) && $_GET['action'] === 'editar') {
+                echo json_encode(['success' => true, 'data' => $citaModel->obtenerEditables(10)]);
+                break;
+            }
+
             // consultar por medico, o porpaciente, por deferto solo pendientes
             $medico = $_GET['medico'] ?? null;
             $paciente = $_GET['paciente'] ?? null;

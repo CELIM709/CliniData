@@ -86,6 +86,27 @@ class Cita {
         return $this->db->query($sql)->fetchAll();
     }
 
+    public function obtenerEditables($limite = 10) {
+        $limite = max(1, min((int) $limite, 10));
+        $sql = "SELECT c.id_cita,
+                       lower(c.rango_cita) AS fecha_inicio,
+                       upper(c.rango_cita) AS fecha_fin,
+                       c.consultorio,
+                       c.estado,
+                       paciente.nombre AS paciente_nombre,
+                       paciente.apellido AS paciente_apellido,
+                       medico.nombre AS medico_nombre,
+                       medico.apellido AS medico_apellido
+                FROM cita c
+                INNER JOIN persona paciente ON c.cedula_paciente = paciente.cedula
+                INNER JOIN persona medico ON c.cedula_medico = medico.cedula
+                WHERE c.estado IN ('PENDIENTE', 'CONFIRMADA')
+                ORDER BY lower(c.rango_cita) ASC
+                LIMIT {$limite}";
+
+        return $this->db->query($sql)->fetchAll();
+    }
+
     /**
      * Cambiar el estado de una cita respetando las transiciones permitidas.
      */
