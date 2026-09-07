@@ -1,513 +1,199 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const API = '../clinica-backend/api/';
+    const $ = (id) => document.getElementById(id);
+    const val = (id) => ($(id)?.value || '').trim();
+    const set = (id, text) => { if ($(id)) $(id).value = text ?? ''; };
+    const text = (id, content) => { if ($(id)) $(id).textContent = content ?? ''; };
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
 
-    // ==========================================
-    // MÓDULO: CARGAR RESUMEN (DASHBOARD)
-    // ==========================================
-    async function cargarResumen() {
-        if (!document.getElementById('resumen_pacientes')) return;
+    async function api(endpoint, options = {}) {
+        const response = await fetch(API + endpoint, {
+            cache: 'no-store', credentials: 'same-origin', ...options,
+            headers: options.body instanceof FormData ? options.headers : { 'Content-Type': 'application/json', ...(options.headers || {}) }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success === false || data.status === 'error') throw new Error(data.error || data.message || `Error HTTP ${response.status}`);
+        return data;
+    }
 
+    function message(content, isError = false) {
+        window.alert(content);
+        console[isError ? 'error' : 'info'](content);
+    }
+
+    function id(letter, number) { return `${val(letter)}-${val(number)}`; }
+    function timestamp(field) { return val(field).replace('T', ' '); }
+    function phone(prefix, number) { return val(number) ? `${val(prefix)}-${val(number)}` : ''; }
+    function splitPhone(value, prefix, number) {
+        const parts = String(value || '').split('-');
+        set(prefix, parts.length > 1 ? parts[0] : '0424');
+        set(number, parts.length > 1 ? parts.slice(1).join('-') : parts[0]);
+    }
+
+    function bind(selector, callback) {
+        const form = document.querySelector(selector);
+        if (!form) return;
+        form.removeAttribute('action');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!form.reportValidity()) return;
+            try { await callback(form); } catch (error) { message(error.message || 'No se pudo completar la operación.', true); }
+        });
+    }
+
+    async function session() {
+        try { return (await api('check_session.php')).usuario; }
+        catch (error) { if (!location.pathname.endsWith('login.html')) location.href = 'login.html'; return null; }
+    }
+
+    document.querySelectorAll('a[href="login.html"]').forEach((link) => link.addEventListener('click', async (event) => {
+        event.preventDefault();
+        try { await api('logout.php', { method: 'POST' }); } finally { location.href = 'login.html'; }
+    }));
+
+    async function receptionSummary() {
+        if (!$('resumen_pacientes')) return;
+        const stats = (await api('empleados.php?action=estadisticas')).data || {};
+        text('resumen_pacientes', stats.total_pacientes || 0); text('resumen_citas_hoy', stats.citas_hoy || 0);
+        text('resumen_citas_confirmadas', stats.consultas_mes || 0); text('resumen_consultorios', stats.estudios_pendientes || 0);
+    }
+
+    async function loadTodayAppointments() {
+        const list = $('citas-del-dia'); if (!list) return;
+        const appointments = (await api('citas.php?action=hoy')).data || [];
+        list.innerHTML = appointments.length ? appointments.map((item) => `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 12px 8px;">${escapeHtml(item.id_cita)}</td><td style="padding: 12px 8px;">${escapeHtml(`${item.paciente_nombre} ${item.paciente_apellido}`)}</td><td style="padding: 12px 8px;">${escapeHtml(`${item.medico_nombre} ${item.medico_apellido}`)}</td><td style="padding: 12px 8px;">${escapeHtml(String(item.fecha_inicio || '').slice(11, 16))} - ${escapeHtml(String(item.fecha_fin || '').slice(11, 16))}</td><td style="padding: 12px 8px;">${escapeHtml(item.consultorio)}</td><td style="padding: 12px 8px;">${escapeHtml(item.estado)}</td><td style="padding: 12px 8px;">${item.estado === 'PENDIENTE' ? `<button type="button" class="btn btn-primary" data-cita-estado="CONFIRMADA" data-id-cita="${escapeHtml(item.id_cita)}" style="padding: 8px 12px; margin-right: 6px;">Confirmar</button><button type="button" class="btn btn-outline" data-cita-estado="CANCELADA" data-id-cita="${escapeHtml(item.id_cita)}" style="padding: 8px 12px;">Cancelar</button>` : 'Sin acciones'}</td></tr>`).join('') : '<tr><td colspan="7" style="padding: 14px 8px;">No hay citas para hoy.</td></tr>';
+    }
+
+    async function loadDoctorAppointments(user) {
+        const list = $('mis-citas-lista'); if (!list) return;
+        const appointments = (await api(`citas.php?medico=${encodeURIComponent(user.cedula)}`)).data || [];
+        list.innerHTML = appointments.length ? appointments.map((item) => `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 12px 8px;">${escapeHtml(item.id_cita)}</td><td style="padding: 12px 8px;">${escapeHtml(`${item.paciente_nombre} ${item.paciente_apellido}`)}</td><td style="padding: 12px 8px;">${escapeHtml(String(item.fecha_inicio || '').slice(0, 16))} - ${escapeHtml(String(item.fecha_fin || '').slice(11, 16))}</td><td style="padding: 12px 8px;">${escapeHtml(item.consultorio)}</td><td style="padding: 12px 8px;">${escapeHtml(item.estado)}</td><td style="padding: 12px 8px;"><button type="button" class="btn btn-outline" data-usar-cita="${escapeHtml(item.id_cita)}" data-cedula-paciente="${escapeHtml(item.cedula_paciente)}" style="padding: 8px 12px;">Usar cita</button></td></tr>`).join('') : '<tr><td colspan="6" style="padding: 14px 8px;">No tienes citas registradas.</td></tr>';
+    }
+
+    $('mis-citas-lista')?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-usar-cita]');
+        if (!button) return;
+        const [letter, number] = String(button.dataset.cedulaPaciente || '').split('-');
+        set('cons_cedula_paciente_letra', letter); set('cons_cedula_paciente_numero', number); set('cons_cedula_paciente', button.dataset.cedulaPaciente); set('cons_id_cita', button.dataset.usarCita);
+        set('cons_costo', val('perfil_tarifa').replace(/[^0-9.]/g, ''));
+        document.querySelector('#form-registro-consulta')?.scrollIntoView({ behavior: 'smooth' });
+        message(`Cita ${button.dataset.usarCita} seleccionada.`);
+    });
+
+    $('citas-del-dia')?.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-cita-estado]');
+        if (!button) return;
+        button.disabled = true;
         try {
-            // Agregamos { cache: 'no-store' } para evitar que el navegador recicle datos viejos
-            const respuesta = await fetch('../clinica-backend/api/empleados.php?action=estadisticas', {
-                method: 'GET',
-                cache: 'no-store'
-            });
-            
-            if (respuesta.ok) {
-                const datos = await respuesta.json();
-                
-                if (datos.success) {
-                    document.getElementById('resumen_pacientes').textContent = datos.data.total_pacientes || 0;
-                    document.getElementById('resumen_citas_hoy').textContent = datos.data.citas_hoy || 0;
-                    // Cambiamos a los nombres exactos que envía el backend
-                    document.getElementById('resumen_citas_confirmadas').textContent = datos.data.consultas_mes || 0;
-                    document.getElementById('resumen_consultorios').textContent = datos.data.estudios_pendientes || 0;
-                }
-            }
+            await api('citas.php', { method: 'PUT', body: JSON.stringify({ id_cita: button.dataset.idCita, nuevo_estado: button.dataset.citaEstado }) });
+            await receptionSummary(); await loadTodayAppointments();
+            message(`Cita ${button.dataset.citaEstado === 'CONFIRMADA' ? 'confirmada' : 'cancelada'} correctamente.`);
         } catch (error) {
-            console.error("Error al cargar el resumen del dashboard:", error);
-        }
-    }
-
-    cargarResumen();
-    
-    // ==========================================
-    // 1. MÓDULO: REGISTRO DE PACIENTE
-    // ==========================================
-    const formRegistroPaciente = document.querySelector('#paciente-registro form');
-
-    if (formRegistroPaciente) {
-        formRegistroPaciente.addEventListener('submit', async (evento) => {
-            evento.preventDefault(); // Evita que la página se recargue
-
-            const letraCed = document.getElementById('reg_cedula_letra').value;
-            const numCed = document.getElementById('reg_cedula_numero').value;
-            const cedulaSegura = `${letraCed}-${numCed}`;
-
-            const prefijoTel = document.getElementById('reg_telefono_prefijo').value;
-            const numTel = document.getElementById('reg_telefono_numero').value;
-            const telefonoSeguro = numTel ? `${prefijoTel}-${numTel}` : '';
-
-           // 2. Construimos el JSON usando estrictamente los IDs que empiezan con 'reg_'
-            const payload = {
-                persona: {
-                    cedula: cedulaSegura,
-                    nombre: document.getElementById('reg_nombre').value,
-                    apellido: document.getElementById('reg_apellido').value,
-                    fecha_nacimiento: document.getElementById('reg_fecha_nacimiento').value,
-                    telefono: telefonoSeguro, // Usamos la variable segura que acabamos de armar
-                    email: document.getElementById('reg_email').value,
-                    direccion: document.getElementById('reg_direccion').value
-                },
-                paciente: {
-                    genero: document.getElementById('reg_genero').value.substring(0, 1).toUpperCase(),
-                    tipo_sangre: document.getElementById('reg_tipo_sangre').value
-                }
-            };
-
-            try {
-                // Ejecutar la petición asíncrona a la API
-                const respuesta = await fetch('../clinica-backend/api/pacientes.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const datos = await respuesta.json();
-
-                // Manejo de la respuesta
-                if (respuesta.ok && datos.success) {
-                    alert('¡' + datos.mensaje + '!');
-                    formRegistroPaciente.reset(); // Limpiar el formulario
-                } else {
-                    alert('Error del servidor: ' + datos.error);
-                }
-            } catch (error) {
-                console.error("Error de red o conexión:", error);
-                alert("Ocurrió un error al intentar conectar con el servidor.");
-            }
-        });
-    }
-
-    // ==========================================
-    // 2. MÓDULO: REGISTRO DE CITA
-    // ==========================================
-    const formCita = document.querySelector('#cita-registro form');
-
-    if (formCita) {
-        formCita.addEventListener('submit', async (evento) => {
-            evento.preventDefault(); 
-
-            // Armar el JSON con los campos exactos requeridos por citas.php
-            const payload = {
-                cedula_paciente: document.getElementById('reg_cedula_paciente').value,
-                cedula_medico: document.getElementById('reg_cedula_medico').value,
-                consultorio: document.getElementById('reg_consultorio').value,
-                // Reemplazamos la "T" del input datetime por un espacio para PostgreSQL
-                fecha_inicio: document.getElementById('reg_rango_cita_inicio').value.replace('T', ' '),
-                fecha_fin: document.getElementById('reg_rango_cita_fin').value.replace('T', ' ')
-            };
-
-            try {
-                const respuesta = await fetch('../clinica-backend/api/citas.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const datos = await respuesta.json();
-
-                // Manejo de respuesta, incluyendo colisiones de horario (409 Conflict)
-                if (respuesta.ok && datos.success) {
-                    alert('¡Éxito! ' + datos.mensaje);
-                    formCita.reset(); 
-                } else {
-                    alert('Error al agendar la cita: ' + datos.error);
-                }
-            } catch (error) {
-                console.error("Error en la petición de citas:", error);
-                alert("Ocurrió un error al intentar conectar con el servidor.");
-            }
-        });
-    }
-
-    // ==========================================
-    // 3. MÓDULO: EDITAR PACIENTE
-    // ==========================================
-    const formEditarPaciente = document.querySelector('#paciente-edicion form');
-
-    if (formEditarPaciente) {
-        formEditarPaciente.addEventListener('submit', async (evento) => {
-            evento.preventDefault(); 
-
-            // 1. Armamos los datos leyendo directamente de las cajas visibles para evitar fallos del campo oculto
-            const letraCed = document.getElementById('edit_cedula_letra').value;
-            const numCed = document.getElementById('edit_cedula_numero').value;
-            const cedulaSegura = `${letraCed}-${numCed}`;
-
-            const prefijoTel = document.getElementById('edit_telefono_prefijo').value;
-            const numTel = document.getElementById('edit_telefono_numero').value;
-            const telefonoSeguro = numTel ? `${prefijoTel}-${numTel}` : '';
-
-            // 2. Construimos el JSON tal como lo exige el case 'PUT' de pacientes.php
-            const payload = {
-                cedula: cedulaSegura, // Identificador principal que pide el PHP
-                persona: {
-                    cedula: cedulaSegura,
-                    nombre: document.getElementById('edit_nombre').value,
-                    apellido: document.getElementById('edit_apellido').value,
-                    fecha_nacimiento: document.getElementById('edit_fecha_nacimiento').value,
-                    telefono: telefonoSeguro,
-                    email: document.getElementById('edit_email').value,
-                    direccion: document.getElementById('edit_direccion').value
-                },
-                paciente: {
-                    genero: document.getElementById('edit_genero').value.substring(0, 1).toUpperCase(),
-                    tipo_sangre: document.getElementById('edit_tipo_sangre').value
-                }
-            };
-
-            try {
-                const respuesta = await fetch('../clinica-backend/api/pacientes.php', {
-                    method: 'PUT', 
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const datos = await respuesta.json();
-
-                if (respuesta.ok && datos.success) {
-                    alert('¡Actualización exitosa! ' + datos.mensaje);
-                    cargarResumen(); // Refresca los números del panel
-                } else {
-                    alert('Error al actualizar: ' + datos.error);
-                }
-            } catch (error) {
-                console.error("Error en la petición de edición:", error);
-                alert("Ocurrió un error al intentar conectar con el servidor.");
-            }
-        });
-    }
-
-    // ==========================================
-    // 4. MÓDULO: EDITAR CITA
-    // ==========================================
-    const formEditarCita = document.querySelector('#cita-edicion form');
-
-    if (formEditarCita) {
-        formEditarCita.addEventListener('submit', async (evento) => {
-            evento.preventDefault(); 
-
-            // Extraemos el ID de la cita desde el input oculto en el HTML
-            const idCita = formEditarCita.querySelector('input[name="id_cita"]').value;
-
-            // Armamos el JSON con el ID, el nuevo estado y las fechas ajustadas sin la "T"
-            const payload = {
-                id_cita: idCita,
-                nuevo_estado: document.getElementById('edit_estado').value,
-                fecha_inicio: document.getElementById('edit_rango_cita_inicio').value.replace('T', ' '),
-                fecha_fin: document.getElementById('edit_rango_cita_fin').value.replace('T', ' ')
-            };
-
-            try {
-                const respuesta = await fetch('../clinica-backend/api/citas.php', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const datos = await respuesta.json();
-
-                // Si se detecta un solapamiento (409 Conflict), entrará al else y mostrará el error
-                if (respuesta.ok && datos.success) {
-                    alert('¡Actualización de cita exitosa! ' + datos.mensaje);
-                    cargarResumen(); // Refrescamos los números del dashboard
-                } else {
-                    alert('Error al actualizar la cita: ' + datos.error);
-                }
-            } catch (error) {
-                console.error("Error en la petición de edición de cita:", error);
-                alert("Ocurrió un error al intentar conectar con el servidor.");
-            }
-        });
-    }
-
-    // ==========================================
-    // 5. MÓDULO: BUSCAR PACIENTE PARA EDITAR
-    // ==========================================
-    const btnBuscarPaciente = document.getElementById('btn_buscar_paciente');
-
-    if (btnBuscarPaciente) {
-        btnBuscarPaciente.addEventListener('click', async () => {
-            const letra = document.getElementById('edit_cedula_letra').value;
-            const numero = document.getElementById('edit_cedula_numero').value;
-
-            if (!numero) {
-                alert("Por favor, ingrese el número de cédula que desea buscar.");
-                return;
-            }
-
-            const cedulaBusqueda = `${letra}-${numero}`;
-
-            try {
-                // Hacemos una petición GET al backend pasando la cédula por la URL
-                const respuesta = await fetch(`../clinica-backend/api/pacientes.php?cedula=${cedulaBusqueda}`);
-                const datos = await respuesta.json();
-
-                if (respuesta.ok && datos.success) {
-                    const paciente = datos.data; 
-                    
-                    // Rellenamos los campos del formulario con los datos reales
-                    document.getElementById('edit_nombre').value = paciente.nombre || '';
-                    document.getElementById('edit_apellido').value = paciente.apellido || '';
-                    document.getElementById('edit_fecha_nacimiento').value = paciente.fecha_nacimiento || '';
-                    document.getElementById('edit_email').value = paciente.email || '';
-                    document.getElementById('edit_direccion').value = paciente.direccion || '';
-                    document.getElementById('edit_genero').value = (paciente.genero === 'M') ? 'Masculino' : ((paciente.genero === 'F') ? 'Femenino' : 'Otro');
-                    document.getElementById('edit_tipo_sangre').value = paciente.tipo_sangre || 'O+';
-                    
-                    // Separar el teléfono si viene con guion (ej: 0414-1234567)
-                    if (paciente.telefono && paciente.telefono.includes('-')) {
-                        const partesTel = paciente.telefono.split('-');
-                        document.getElementById('edit_telefono_prefijo').value = partesTel[0];
-                        document.getElementById('edit_telefono_numero').value = partesTel[1];
-                    } else {
-                        document.getElementById('edit_telefono_numero').value = paciente.telefono || '';
-                    }
-
-                    alert("Datos del paciente cargados correctamente.");
-                } else {
-                    alert('No se encontró ningún paciente con esa cédula.');
-                    // Limpiar campos si no existe
-                    document.getElementById('paciente-edicion').querySelector('form').reset();
-                    document.getElementById('edit_cedula_numero').value = numero; // Mantener el número que buscó
-                }
-            } catch (error) {
-                console.error("Error al buscar paciente:", error);
-                alert("Ocurrió un error al intentar consultar el servidor.");
-            }
-        });
-    }
-
-// ==========================================
-// MÓDULO: ESTADÍSTICAS DEL ADMINISTRADOR
-// ==========================================
-async function cargarResumenAdmin() {
-    if (!document.getElementById('total_recepcionistas')) return; 
-
-    try {
-        // Quitamos "action=estadisticas" para obtener el arreglo completo de empleados
-        const respuesta = await fetch('../clinica-backend/api/empleados.php?t=' + new Date().getTime());
-        const datos = await respuesta.json();
-
-        if (respuesta.ok && datos.success) {
-            const empleados = datos.data; 
-            
-            let contRecepcionistas = 0;
-            let contLaboratoristas = 0;
-            let contMedicos = 0;
-
-            // Recorremos la lista y contamos cada rol
-            empleados.forEach(emp => {
-                const rol = emp.rol ? emp.rol.toUpperCase() : '';
-                if (rol === 'RECEPCIONISTA') contRecepcionistas++;
-                else if (rol === 'LABORATORISTA') contLaboratoristas++;
-                else if (rol === 'MEDICO') contMedicos++;
-            });
-
-            // Inyectamos los resultados en el HTML
-            document.getElementById('total_recepcionistas').textContent = contRecepcionistas;
-            document.getElementById('total_laboratoristas').textContent = contLaboratoristas;
-            document.getElementById('total_medicos').textContent = contMedicos;
-            document.getElementById('total_empleados').textContent = empleados.length;
-        }
-    } catch (error) {
-        console.error("Error cargando estadísticas del administrador:", error);
-    }
-}
-// Ejecutar al cargar la página
-cargarResumenAdmin();
-
-const formRecepcionista = document.getElementById('form-registro-recepcionista');
-
-if (formRecepcionista) {
-    formRecepcionista.addEventListener('submit', async (evento) => {
-        evento.preventDefault(); // Evitamos que la página se recargue (adiós error 404)
-
-        // Armamos los datos compuestos leyendo directamente las cajas
-        const cedula = `${document.getElementById('rec_cedula_letra').value}-${document.getElementById('rec_cedula_numero').value}`;
-        const numTel = document.getElementById('rec_telefono_numero').value;
-        const telefono = numTel ? `${document.getElementById('rec_telefono_prefijo').value}-${numTel}` : '';
-        const numExt = document.getElementById('rec_extension_tlf_numero').value;
-        const extension = numExt ? `${document.getElementById('rec_extension_tlf_prefijo').value}-${numExt}` : '';
-
-        // Construimos la estructura exacta que espera empleados.php
-        const payload = {
-            persona: {
-                cedula: cedula,
-                nombre: document.getElementById('rec_nombre').value,
-                apellido: document.getElementById('rec_apellido').value,
-                fecha_nacimiento: document.getElementById('rec_fecha_nacimiento').value,
-                telefono: telefono,
-                email: document.getElementById('rec_email').value,
-                direccion: document.getElementById('rec_direccion').value
-            },
-            empleado: {
-                salario: document.getElementById('rec_salario').value,
-                fecha_contratado: document.getElementById('rec_fecha_contratado').value,
-                id_horario: document.getElementById('rec_id_horario').value,
-                clave_acceso: document.getElementById('rec_clave_acceso').value,
-                rol: 'RECEPCIONISTA'
-            },
-            rol_especifico: {
-                estacion_trabajo: document.getElementById('rec_estacion_trabajo').value,
-                extension_tlf: extension
-            }
-        };
-
-        try {
-            const respuesta = await fetch('../clinica-backend/api/empleados.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            const datos = await respuesta.json();
-            
-            if (respuesta.ok && datos.success) {
-                alert('Recepcionista registrada con éxito');
-                formRecepcionista.reset();
-                cargarResumenAdmin(); // Actualizamos los números del dashboard al instante
-            } else {
-                alert('Error al registrar: ' + (datos.error || 'Problema desconocido'));
-            }
-        } catch (error) {
-            console.error("Error en la petición POST:", error);
+            button.disabled = false;
+            message(error.message, true);
         }
     });
-}
 
-// ==========================================
-// REGISTRAR LABORATORISTA (ADMIN)
-// ==========================================
-const formLaboratorista = document.getElementById('form-registro-laboratorista');
-if (formLaboratorista) {
-    formLaboratorista.addEventListener('submit', async (evento) => {
-        evento.preventDefault(); 
-        
-        const numTel = document.getElementById('lab_telefono_numero').value;
-        const telefono = numTel ? `${document.getElementById('lab_telefono_prefijo').value}-${numTel}` : '';
+    async function adminSummary() {
+        if (!$('total_empleados')) return;
+        const employees = (await api('empleados.php')).data || [];
+        const count = (role) => employees.filter((item) => String(item.rol).toUpperCase() === role).length;
+        text('total_recepcionistas', count('RECEPCIONISTA')); text('total_laboratoristas', count('LABORATORISTA'));
+        text('total_medicos', count('MEDICO')); text('total_empleados', employees.length);
+    }
 
-        const payload = {
-            persona: {
-                cedula: `${document.getElementById('lab_cedula_letra').value}-${document.getElementById('lab_cedula_numero').value}`,
-                nombre: document.getElementById('lab_nombre').value,
-                apellido: document.getElementById('lab_apellido').value,
-                fecha_nacimiento: document.getElementById('lab_fecha_nacimiento').value,
-                telefono: telefono,
-                email: document.getElementById('lab_email').value,
-                direccion: document.getElementById('lab_direccion').value
-            },
-            empleado: {
-                salario: document.getElementById('lab_salario').value,
-                fecha_contratado: document.getElementById('lab_fecha_contratado').value,
-                id_horario: document.getElementById('lab_id_horario').value,
-                clave_acceso: document.getElementById('lab_clave_acceso').value,
-                rol: 'LABORATORISTA'
-            },
-            rol_especifico: {
-                carnet_bioanalista: `M.P.P.S. ${document.getElementById('lab_carnet_bioanalista_numero').value}`,
-                area: document.getElementById('lab_area').value
-            }
+    function employee(prefix, role, specific) {
+        return {
+            persona: { cedula: id(`${prefix}_cedula_letra`, `${prefix}_cedula_numero`), nombre: val(`${prefix}_nombre`), apellido: val(`${prefix}_apellido`), fecha_nacimiento: val(`${prefix}_fecha_nacimiento`), telefono: phone(`${prefix}_telefono_prefijo`, `${prefix}_telefono_numero`), email: val(`${prefix}_email`), direccion: val(`${prefix}_direccion`) },
+            empleado: { salario: val(`${prefix}_salario`), fecha_contratado: val(`${prefix}_fecha_contratado`), id_horario: val(`${prefix}_id_horario`), clave_acceso: val(`${prefix}_clave_acceso`), rol: role },
+            rol_especifico: specific
         };
+    }
 
-        try {
-            const respuesta = await fetch('../clinica-backend/api/empleados.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const datos = await respuesta.json();
-            
-            if (respuesta.ok && datos.success) {
-                alert('Laboratorista registrado con éxito');
-                formLaboratorista.reset();
-                cargarResumenAdmin(); 
-            } else {
-                alert('Error al registrar: ' + (datos.error || 'Problema desconocido'));
-            }
-        } catch (error) {
-            console.error("Error POST Laboratorista:", error);
-        }
+    bind('#form-registro-recepcionista', async (form) => {
+        await api('empleados.php', { method: 'POST', body: JSON.stringify(employee('rec', 'RECEPCIONISTA', { estacion_trabajo: val('rec_estacion_trabajo'), extension_tlf: phone('rec_extension_tlf_prefijo', 'rec_extension_tlf_numero') })) });
+        form.reset(); await adminSummary(); message('Recepcionista registrada correctamente.');
     });
-}
-
-// ==========================================
-// REGISTRAR MÉDICO (ADMIN)
-// ==========================================
-const formMedico = document.getElementById('form-registro-medico');
-if (formMedico) {
-    formMedico.addEventListener('submit', async (evento) => {
-        evento.preventDefault(); 
-        
-        const numTel = document.getElementById('med_telefono_numero').value;
-        const telefono = numTel ? `${document.getElementById('med_telefono_prefijo').value}-${numTel}` : '';
-
-        // Extraemos las especialidades seleccionadas (pueden ser varias)
-        const selectEspecialidades = document.getElementById('med_especialidades');
-        const especialidades = Array.from(selectEspecialidades.selectedOptions).map(opt => opt.value);
-
-        const payload = {
-            persona: {
-                cedula: `${document.getElementById('med_cedula_letra').value}-${document.getElementById('med_cedula_numero').value}`,
-                nombre: document.getElementById('med_nombre').value,
-                apellido: document.getElementById('med_apellido').value,
-                fecha_nacimiento: document.getElementById('med_fecha_nacimiento').value,
-                telefono: telefono,
-                email: document.getElementById('med_email').value,
-                direccion: document.getElementById('med_direccion').value
-            },
-            empleado: {
-                salario: document.getElementById('med_salario').value,
-                fecha_contratado: document.getElementById('med_fecha_contratado').value,
-                id_horario: document.getElementById('med_id_horario').value,
-                clave_acceso: document.getElementById('med_clave_acceso').value,
-                rol: 'MEDICO'
-            },
-            rol_especifico: {
-                carnet_medico: `M.P.P.S. ${document.getElementById('med_carnet_medico_numero').value}`,
-                tarifa: document.getElementById('med_tarifa').value,
-                especialidades: especialidades
-            }
-        };
-
-        try {
-            const respuesta = await fetch('../clinica-backend/api/empleados.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const datos = await respuesta.json();
-            
-            if (respuesta.ok && datos.success) {
-                alert('Médico registrado con éxito');
-                formMedico.reset();
-                cargarResumenAdmin(); 
-            } else {
-                alert('Error al registrar: ' + (datos.error || 'Problema desconocido'));
-            }
-        } catch (error) {
-            console.error("Error POST Médico:", error);
-        }
+    bind('#form-registro-laboratorista', async (form) => {
+        await api('empleados.php', { method: 'POST', body: JSON.stringify(employee('lab', 'LABORATORISTA', { carnet_bioanalista: `M.P.P.S. ${val('lab_carnet_bioanalista_numero')}`, area: val('lab_area') })) });
+        form.reset(); await adminSummary(); message('Laboratorista registrado correctamente.');
     });
-}
+    bind('#form-registro-medico', async (form) => {
+        const specialties = Array.from($('med_especialidades')?.selectedOptions || []).map((option) => option.value);
+        await api('empleados.php', { method: 'POST', body: JSON.stringify(employee('med', 'MEDICO', { carnet_medico: `M.P.P.S. ${val('med_carnet_medico_numero')}`, tarifa: val('med_tarifa'), especialidades: specialties })) });
+        form.reset(); await adminSummary(); message('Médico registrado correctamente.');
+    });
 
+    bind('#paciente-registro form', async (form) => {
+        await api('pacientes.php', { method: 'POST', body: JSON.stringify({ persona: { cedula: id('reg_cedula_letra', 'reg_cedula_numero'), nombre: val('reg_nombre'), apellido: val('reg_apellido'), fecha_nacimiento: val('reg_fecha_nacimiento'), telefono: phone('reg_telefono_prefijo', 'reg_telefono_numero'), email: val('reg_email'), direccion: val('reg_direccion') }, paciente: { genero: val('reg_genero').slice(0, 1).toUpperCase(), tipo_sangre: val('reg_tipo_sangre') } }) });
+        form.reset(); await receptionSummary(); message('Paciente registrado correctamente.');
+    });
+    bind('#paciente-edicion form', async () => {
+        const patientId = id('edit_cedula_letra', 'edit_cedula_numero');
+        await api('pacientes.php', { method: 'PUT', body: JSON.stringify({ cedula: patientId, persona: { cedula: patientId, nombre: val('edit_nombre'), apellido: val('edit_apellido'), fecha_nacimiento: val('edit_fecha_nacimiento'), telefono: phone('edit_telefono_prefijo', 'edit_telefono_numero'), email: val('edit_email'), direccion: val('edit_direccion') }, paciente: { genero: val('edit_genero').slice(0, 1).toUpperCase(), tipo_sangre: val('edit_tipo_sangre') } }) });
+        await receptionSummary(); message('Paciente actualizado correctamente.');
+    });
+    $('btn_buscar_paciente')?.addEventListener('click', async () => {
+        try {
+            const patient = (await api(`pacientes.php?cedula=${encodeURIComponent(id('edit_cedula_letra', 'edit_cedula_numero'))}`)).data;
+            ['nombre', 'apellido', 'fecha_nacimiento', 'email', 'direccion'].forEach((field) => set(`edit_${field}`, patient[field]));
+            set('edit_genero', patient.genero === 'M' ? 'Masculino' : patient.genero === 'F' ? 'Femenino' : 'Otro'); set('edit_tipo_sangre', patient.tipo_sangre); splitPhone(patient.telefono, 'edit_telefono_prefijo', 'edit_telefono_numero'); message('Datos del paciente cargados.');
+        } catch (error) { message(error.message, true); }
+    });
+
+    bind('#cita-registro form', async (form) => {
+        if (timestamp('reg_rango_cita_fin') <= timestamp('reg_rango_cita_inicio')) throw new Error('La hora final debe ser posterior a la inicial.');
+        const result = await api('citas.php', { method: 'POST', body: JSON.stringify({ cedula_paciente: id('reg_cedula_paciente_letra', 'reg_cedula_paciente_numero'), cedula_medico: id('reg_cedula_medico_letra', 'reg_cedula_medico_numero'), consultorio: val('reg_consultorio_numero'), fecha_inicio: timestamp('reg_rango_cita_inicio'), fecha_fin: timestamp('reg_rango_cita_fin') }) });
+        form.reset(); await receptionSummary(); await loadTodayAppointments(); text('cita-registrada', `Cita registrada correctamente. ID de cita: ${result.id_cita}`); $('cita-registrada')?.classList.remove('hidden');
+    });
+    bind('#cita-edicion form', async () => {
+        if (timestamp('edit_rango_cita_fin') <= timestamp('edit_rango_cita_inicio')) throw new Error('La hora final debe ser posterior a la inicial.');
+        await api('citas.php', { method: 'PUT', body: JSON.stringify({ id_cita: val('id_cita'), nuevo_estado: val('edit_estado'), fecha_inicio: timestamp('edit_rango_cita_inicio'), fecha_fin: timestamp('edit_rango_cita_fin') }) });
+        await receptionSummary(); await loadTodayAppointments(); message('Cita actualizada correctamente.');
+    });
+
+    async function loadHistory(patientId) {
+        const history = (await api(`historia_medica.php?cedula_paciente=${encodeURIComponent(patientId)}`)).data || {};
+        set('hist_antecedentes', history.antecedentes); set('hist_alergias', history.alergias); set('hist_medicacion', history.medicacion_habitual);
+    }
+    let consultationHistory = [];
+    function renderConsultations(items) {
+        const list = document.querySelector('#paciente-buscar ul'); if (!list) return;
+        list.innerHTML = items.length ? items.map((item) => `<li data-id-consulta="${escapeHtml(item.id_consulta)}" style="padding:14px 18px;border:1px solid var(--border-color);margin-bottom:10px;cursor:pointer">Consulta ${escapeHtml(item.id_consulta)} - Cita ${escapeHtml(item.id_cita || 'sin cita')} - ${escapeHtml(String(item.fecha || '').slice(0, 10))} - ${escapeHtml(item.diagnostico || '')}</li>`).join('') : '<li>No hay consultas en el rango seleccionado.</li>';
+        list.querySelectorAll('[data-id-consulta]').forEach((item) => item.addEventListener('click', () => loadDetail(item.dataset.idConsulta)));
+    }
+    async function loadConsultations(patientId) {
+        consultationHistory = (await api(`consultas.php?paciente=${encodeURIComponent(patientId)}`)).data || [];
+        renderConsultations(consultationHistory);
+    }
+    $('btn-consultar-rango')?.addEventListener('click', () => {
+        const desde = val('rango_desde'); const hasta = val('rango_hasta');
+        if (desde && hasta && desde > hasta) { message('La fecha inicial no puede ser posterior a la fecha final.', true); return; }
+        renderConsultations(consultationHistory.filter((item) => { const fecha = String(item.fecha || '').slice(0, 10); return (!desde || fecha >= desde) && (!hasta || fecha <= hasta); }));
+    });
+    $('btn-ver-todas-consultas')?.addEventListener('click', () => renderConsultations(consultationHistory));
+    async function loadDetail(consultationId) {
+        const detail = (await api(`consultas.php?id=${consultationId}`)).data || {};
+        set('det_diagnostico', detail.diagnostico); set('det_observaciones', detail.observaciones); set('det_costo', detail.costo);
+        const [recipes, studies] = await Promise.all([api(`recetas.php?id_consulta=${consultationId}`), api(`estudios.php?id_consulta=${consultationId}`)]);
+        set('det_recetas', (recipes.data || []).map((item) => item.nombre_medicamento || item.nombre || '').join(', ')); set('det_estudios', (studies.data || []).map((item) => item.nombre_estudio || item.tipo || '').join(', ')); $('detalle-consulta')?.classList.remove('hidden');
+    }
+    async function findPatient() {
+        const patientId = val('buscar_cedula') || id('buscar_cedula_letra', 'buscar_cedula_numero');
+        const patient = (await api(`pacientes.php?cedula=${encodeURIComponent(patientId)}`)).data;
+        ['nombre', 'apellido', 'fecha_nacimiento', 'email', 'direccion'].forEach((field) => set(`pac_${field}`, patient[field])); splitPhone(patient.telefono, 'pac_telefono_prefijo', 'pac_telefono_numero'); set('pac_genero', patient.genero === 'M' ? 'Masculino' : patient.genero === 'F' ? 'Femenino' : 'Otro'); set('pac_tipo_sangre', patient.tipo_sangre); set('hist_cedula_paciente', patient.cedula); $('resultado-paciente')?.classList.remove('hidden'); await Promise.all([loadHistory(patient.cedula), loadConsultations(patient.cedula)]);
+    }
+    document.querySelector('#paciente-buscar .search-bar-container .btn-primary')?.addEventListener('click', () => findPatient().catch((error) => message(error.message, true)));
+    window.verDetalleConsulta = (item) => loadDetail(item.dataset.idConsulta).catch((error) => message(error.message, true));
+    bind('#form-historia-medica', async () => { await api('historia_medica.php', { method: 'PUT', body: JSON.stringify({ cedula_paciente: val('hist_cedula_paciente'), antecedentes: val('hist_antecedentes'), alergias: val('hist_alergias'), medicacion_habitual: val('hist_medicacion') }) }); message('Historia médica guardada correctamente.'); });
+    bind('#form-registro-consulta', async (form) => { const user = await session(); const payload = { cedula_paciente: id('cons_cedula_paciente_letra', 'cons_cedula_paciente_numero'), cedula_medico: user?.cedula, diagnostico: val('cons_diagnostico'), observaciones: val('cons_observaciones'), costo: val('cons_costo') }; if (val('cons_id_cita')) payload.id_cita = val('cons_id_cita'); const result = await api('consultas.php', { method: 'POST', body: JSON.stringify(payload) }); set('rec_id_consulta', result.id_consulta); form.reset(); message('Consulta registrada correctamente.'); });
+    bind('#form-registro-receta', async (form) => { await api('recetas.php', { method: 'POST', body: JSON.stringify({ id_consulta: val('rec_id_consulta'), medicamentos: [{ id_medicamento: val('rec_id_medicamento'), dosis: val('rec_dosis'), frecuencia: val('rec_frecuencia'), duracion: val('rec_duracion'), indicaciones: val('rec_indicaciones') }] }) }); form.reset(); message('Receta registrada correctamente.'); });
+
+    async function loadStudyTypes() { if (!$('reg_tipo')) return; const data = await api('tipos_estudio.php'); $('reg_tipo').innerHTML = '<option value="">Seleccione...</option>'; (data.data || []).forEach((item) => $('reg_tipo').add(new Option(item.nombre_estudio, item.id_tipo_estudio))); }
+    bind('#form-registro-estudio', async (form) => { await api('estudios.php?action=solicitar', { method: 'POST', body: JSON.stringify({ id_consulta: val('reg_id_consulta'), tipos: [val('reg_tipo')] }) }); form.reset(); message('Estudio solicitado correctamente.'); });
+    bind('#form-edicion-estudio', async () => { await api('estudios.php', { method: 'PUT', body: JSON.stringify({ id_estudio: val('id_estudio'), estado: val('edit_estado') }) }); message('Estudio actualizado correctamente.'); });
+    bind('#form-registro-resultado', async (form) => { const data = new FormData(form); await api('resultados.php', { method: 'POST', body: data }); form.reset(); message('Resultado cargado correctamente.'); });
+
+    session().then((user) => Promise.all([receptionSummary().catch(() => {}), loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]));
+    async function loadDoctor(user) { if (!$('perfil_nombre_texto')) return; const doctor = (await api(`medicos.php?cedula=${encodeURIComponent(user.cedula)}`)).data || {}; set('perfil_nombre_texto', user.nombre); set('perfil_nombre', user.nombre); set('perfil_cedula_numero', user.cedula.split('-')[1]); set('perfil_cedula', user.cedula); set('perfil_carnet_numero', String(doctor.carnet_medico || '').replace(/^M\.P\.P\.S\.\s*/i, '')); set('perfil_carnet', doctor.carnet_medico); set('perfil_tarifa', doctor.tarifa); set('perfil_especialidad', doctor.especialidades); }
 });

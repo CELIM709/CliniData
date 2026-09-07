@@ -21,10 +21,10 @@ class Cita {
                         :cedula_medico, 
                         :cedula_paciente, 
                         :estado
-                    )";
+                    ) RETURNING id_cita";
 
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
+            $stmt->execute([
                 ':fecha_inicio'    => $datos['fecha_inicio'], // Formato: 'YYYY-MM-DD HH:MM:SS'
                 ':fecha_fin'       => $datos['fecha_fin'],    // Formato: 'YYYY-MM-DD HH:MM:SS'
                 ':consultorio'     => $datos['consultorio'],
@@ -32,6 +32,7 @@ class Cita {
                 ':cedula_paciente' => $datos['cedula_paciente'],
                 ':estado'          => $datos['estado'] ?? 'PENDIENTE'
             ]);
+            return (int) $stmt->fetchColumn();
 
         } catch (PDOException $e) {
             // Código 23P01 = exclusion_violation en PostgreSQL (solapamiento detectado por la restricción EXCLUDE)
@@ -51,6 +52,7 @@ class Cita {
                        upper(c.rango_cita) AS fecha_fin,
                        c.consultorio, 
                        c.estado,
+                       c.cedula_paciente,
                        p.nombre AS paciente_nombre, 
                        p.apellido AS paciente_apellido, 
                        p.telefono AS paciente_telefono
@@ -63,6 +65,25 @@ class Cita {
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':cedula_medico' => $cedula_medico]);
         return $stmt->fetchAll();
+    }
+
+    public function obtenerDelDia() {
+        $sql = "SELECT c.id_cita,
+                       lower(c.rango_cita) AS fecha_inicio,
+                       upper(c.rango_cita) AS fecha_fin,
+                       c.consultorio,
+                       c.estado,
+                       paciente.nombre AS paciente_nombre,
+                       paciente.apellido AS paciente_apellido,
+                       medico.nombre AS medico_nombre,
+                       medico.apellido AS medico_apellido
+                FROM cita c
+                INNER JOIN persona paciente ON c.cedula_paciente = paciente.cedula
+                INNER JOIN persona medico ON c.cedula_medico = medico.cedula
+                WHERE lower(c.rango_cita)::date = CURRENT_DATE
+                ORDER BY lower(c.rango_cita) ASC";
+
+        return $this->db->query($sql)->fetchAll();
     }
 
     /**
