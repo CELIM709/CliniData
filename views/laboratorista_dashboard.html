@@ -34,20 +34,21 @@
         <!-- SECCIÓN: REGISTRO DE ESTUDIO -->
         <section id="estudio-registro" class="card">
             <h3 class="card-title">Registrar Nuevo Estudio</h3>
-            <form action="procesar_registro_estudio.php" method="POST">
+            <form id="form-registro-estudio">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="reg_id_consulta">ID de Consulta (Asociada)</label>
-                        <input type="number" id="reg_id_consulta" name="id_consulta" class="form-control" required>
+                        <input type="text" id="reg_id_consulta" name="id_consulta" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="consultas-disponibles" placeholder="Seleccione o escriba un ID">
+                        <datalist id="consultas-disponibles"></datalist>
                     </div>
                     <div class="form-group">
                         <label for="reg_laboratorista_numero">Cédula del Laboratorista</label>
                         <div style="display:flex; gap:8px;">
-                            <select id="reg_laboratorista_letra" class="form-control" style="max-width:80px;">
+                            <select id="reg_laboratorista_letra" class="form-control" style="max-width:80px;" disabled>
                                 <option value="V">V</option>
                                 <option value="E">E</option>
                             </select>
-                            <input type="text" id="reg_laboratorista_numero" class="form-control" required
+                            <input type="text" id="reg_laboratorista_numero" class="form-control" required readonly
                                    inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 55555555">
                         </div>
                         <small id="reg_laboratorista_error" class="hidden" style="color:#dc3545; font-size:12px;">
@@ -60,15 +61,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="reg_tipo">Tipo de Estudio</label>
-                        <input type="text" id="reg_tipo" name="tipo" class="form-control" required maxlength="100" placeholder="Ej: Hematología Completa">
+                        <select id="reg_tipo" name="tipo" class="form-control" required><option value="">Cargando tipos...</option></select>
                     </div>
                     <div class="form-group">
                         <label for="reg_estado">Estado</label>
-                        <select id="reg_estado" name="estado" class="form-control" required>
-                            <option value="">Seleccione...</option>
-                            <option value="PENDIENTE">Pendiente</option>
-                            <option value="EN PROCESO">En Proceso</option>
-                            <option value="COMPLETADO">Completado</option>
+                        <select id="reg_estado" name="estado" class="form-control" required disabled>
+                            <option value="PENDIENTE" selected>Pendiente</option>
                         </select>
                     </div>
                 </div>
@@ -89,8 +87,12 @@
         <!-- SECCIÓN: EDICIÓN DE ESTUDIO -->
         <section id="estudio-edicion" class="card hidden">
             <h3 class="card-title">Editar Estudio</h3>
-            <form action="procesar_edicion_estudio.php" method="POST">
-                <input type="hidden" name="id_estudio" value="1">
+            <form id="form-edicion-estudio">
+                <div class="form-group">
+                    <label for="id_estudio">ID del Estudio</label>
+                    <input type="text" id="id_estudio" name="id_estudio" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="estudios-disponibles" placeholder="Seleccione o escriba un ID">
+                    <datalist id="estudios-disponibles"></datalist>
+                </div>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -123,9 +125,7 @@
                     <div class="form-group">
                         <label for="edit_estado">Estado</label>
                         <select id="edit_estado" name="estado" class="form-control" required>
-                            <option value="PENDIENTE">Pendiente</option>
-                            <option value="EN PROCESO" selected>En Proceso</option>
-                            <option value="COMPLETADO">Completado</option>
+                            <option value="CANCELADA">Cancelada</option>
                         </select>
                     </div>
                 </div>
@@ -144,21 +144,22 @@
         <!-- SECCIÓN: REGISTRO DE RESULTADO -->
         <section id="resultado-registro" class="card hidden">
             <h3 class="card-title">Cargar Resultado de Laboratorio</h3>
-            <form action="procesar_resultado.php" method="POST" enctype="multipart/form-data">
+            <form id="form-registro-resultado" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="res_id_estudio">ID del Estudio Asociado</label>
-                    <input type="number" id="res_id_estudio" name="id_estudio" class="form-control" required>
+                    <input type="text" id="res_id_estudio" name="id_estudio" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="estudios-resultado-disponibles" placeholder="Seleccione o escriba un ID">
+                    <datalist id="estudios-resultado-disponibles"></datalist>
                 </div>
 
                 <div class="form-group">
                     <label for="res_descripcion">Descripción / Notas Médicas</label>
-                    <textarea id="res_descripcion" name="descripcion" class="form-control" placeholder="Detalles del resultado..."></textarea>
+                    <textarea id="res_descripcion" name="descripcion" class="form-control" required placeholder="Detalles del resultado..."></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="res_ruta_archivo">Archivo de Resultados (PDF, JPG, etc)</label>
                     <!-- El campo en BD se llama ruta_archivo, el input type="file" captura el archivo, y PHP guardará la ruta -->
-                    <input type="file" id="res_ruta_archivo" name="ruta_archivo" class="form-control" required>
+                    <input type="file" id="res_ruta_archivo" name="archivo" class="form-control" required>
                 </div>
 
                 <div class="form-actions">
@@ -231,5 +232,6 @@
     mostrarErrorCedula('edit_laboratorista_numero', 'edit_laboratorista_error');
 
 </script>
+<script src="../js/integracion.js"></script>
 </body>
 </html>
