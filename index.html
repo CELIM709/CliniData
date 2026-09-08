@@ -33,12 +33,14 @@
             <div class="hero-buttons">
                 <!-- Enlaces conceptuales para pacientes -->
                 <a href="#citas" class="btn btn-primary">Consultar Citas</a>
-                <a href="#resultados" class="btn btn-outline" style="color: #fff; border-color: #fff;">Ver Resultados</a>
+                <!--<a href="#resultados" class="btn btn-outline" style="color: #fff; border-color: #fff;">Ver Resultados</a> -->
+                <a href="#consultas-medicas" class="btn btn-outline" style="color: #fff; border-color: #fff;">Historial de Consultas</a>
             </div>
         </div>
     </main>
 
     <main class="main-content" style="max-width: 800px; margin: 40px auto; padding: 20px;">
+        <!-- SECCIÓN 1: CITAS -->
         <section id="citas" class="card">
             <h3 class="card-title">Consultar Mis Citas</h3>
             <p style="color:var(--text-muted); margin-bottom:20px;">
@@ -74,11 +76,12 @@
                 </div>
             </form>
 
-            
-            <div id="resultado-citas" class="hidden" style="margin-top:20px;">
-            </div>
+            <div id="resultado-citas" class="hidden" style="margin-top:20px;"></div>
         </section>
 
+
+        <!-- SECCIÓN 2: RESULTADOS -->
+         <!--
         <section id="resultados" class="card" style="margin-top: 40px;">
             <h3 class="card-title">Ver Resultados Médicos</h3>
             <p style="color:var(--text-muted); margin-bottom:20px;">
@@ -112,12 +115,52 @@
                 </div>
             </form>
 
-            <div id="resultado-examenes" class="hidden" style="margin-top:20px;">
-            </div>
+            <div id="resultado-examenes" class="hidden" style="margin-top:20px;"></div>
+        </section>
+        -->
+
+        <!-- SECCIÓN 3: NUEVA SECCIÓN DE CONSULTAS MÉDICAS Y RECETAS -->
+        <section id="consultas-medicas" class="card" style="margin-top: 40px;">
+            <h3 class="card-title">Historial de Consultas Médicas</h3>
+            <p style="color:var(--text-muted); margin-bottom:20px;">
+                Ingresa tu cédula y fecha de nacimiento para consultar tus diagnósticos, recetas y estudios asociados.
+            </p>
+
+            <div id="alerta-consultas" class="alert-box hidden"></div>
+
+            <form id="form-consultar-consultas">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="consultas_cedula_numero">Cédula</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="consultas_cedula_letra" class="form-control" style="max-width:80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="consultas_cedula_numero" class="form-control" required
+                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
+                        </div>
+                        <small id="consultas_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
+                            La cédula debe tener entre 7 y 8 dígitos.
+                        </small>
+                        <input type="hidden" id="consultas_cedula" name="cedula">
+                    </div>
+                    <div class="form-group">
+                        <label for="consultas_fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="consultas_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-actions" style="justify-content:flex-start;">
+                    <button type="submit" class="btn btn-primary">Buscar Consultas</button>
+                </div>
+            </form>
+
+            <div id="resultado-consultas-medicas" class="hidden" style="margin-top:20px;"></div>
         </section>
     </main>
 
     <script>
+        // --- UTILIDADES ---
         function combinarCedula(idLetra, idNumero, idOculto) {
             const letra = document.getElementById(idLetra);
             const numero = document.getElementById(idNumero);
@@ -152,16 +195,22 @@
             }
         }
 
-        // Inicializar cédulas
+        // Formateo de la cedula
         combinarCedula('citas_cedula_letra', 'citas_cedula_numero', 'citas_cedula');
         mostrarErrorCedula('citas_cedula_numero', 'citas_cedula_error');
         soloNumeros('citas_cedula_numero');
 
+        /*
         combinarCedula('resultados_cedula_letra', 'resultados_cedula_numero', 'resultados_cedula');
         mostrarErrorCedula('resultados_cedula_numero', 'resultados_cedula_error');
         soloNumeros('resultados_cedula_numero');
+        */
 
-        // Formularios
+        combinarCedula('consultas_cedula_letra', 'consultas_cedula_numero', 'consultas_cedula');
+        mostrarErrorCedula('consultas_cedula_numero', 'consultas_cedula_error');
+        soloNumeros('consultas_cedula_numero');
+
+        // Funciones actuales de Citas y Resultados
         async function consultarPublico(endpoint, cedula, fecha, container, emptyMessage) {
             const response = await fetch(`clinica-backend/api/${endpoint}?paciente=${encodeURIComponent(cedula)}&fecha_nacimiento=${encodeURIComponent(fecha)}`, { cache: 'no-store' });
             const data = await response.json().catch(() => ({}));
@@ -182,6 +231,7 @@
             } catch (error) { alerta.textContent = error.message; alerta.classList.remove('hidden'); }
         });
 
+        /*
         document.getElementById('form-consultar-resultados').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.currentTarget;
@@ -190,6 +240,134 @@
             try {
                 await consultarPublico('resultados.php', document.getElementById('resultados_cedula').value, document.getElementById('resultados_fecha_nacimiento').value, container, 'No hay resultados disponibles.');
             } catch (error) { container.classList.remove('hidden'); container.innerHTML = `<div class="alert-box">${error.message}</div>`; }
+        });
+        */
+
+        // --- NUEVA FUNCIONALIDAD DE CONSULTAS MÉDICAS CON DESPLEGABLES ---
+        async function consultarConsultasMedicas(cedula, fecha, container) {
+            const url = `clinica-backend/api/consultas.php?paciente=${encodeURIComponent(cedula)}&fecha_nacimiento=${encodeURIComponent(fecha)}`;
+            const response = await fetch(url, { cache: 'no-store' });
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'No se pudieron obtener las consultas médicas.');
+            }
+
+            const consultas = data.data || [];
+            container.classList.remove('hidden');
+
+            if (!consultas.length) {
+                container.innerHTML = `<div class="alert-box">No hay consultas registradas para esta persona.</div>`;
+                return;
+            }
+
+            container.innerHTML = consultas.map(c => `
+                <div class="alert-box" style="margin-bottom: 15px; text-align: left; padding: 15px;">
+                    <p><strong>Fecha:</strong> ${c.fecha} | <strong>Médico:</strong> Dr(a). ${c.medico_nombre || ''} ${c.medico_apellido || ''}</p>
+                    <p><strong>Diagnóstico:</strong> ${c.diagnostico || 'Sin diagnóstico registrado'}</p>
+                    <p><strong>Observaciones:</strong> ${c.observaciones || 'N/A'}</p>
+                    
+                    <div style="margin-top: 12px; display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-outline" style="font-size: 13px; padding: 6px 12px;" onclick="verRecetas(${c.id_consulta}, 'recetas-${c.id_consulta}')">Ver Recetas</button>
+                        <button type="button" class="btn btn-outline" style="font-size: 13px; padding: 6px 12px;" onclick="verResultados(${c.id_consulta}, 'resultados-${c.id_consulta}')">Ver Exámenes</button>
+                    </div>
+
+                    <div id="recetas-${c.id_consulta}" style="display: none; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.03); border-left: 3px solid #0066cc; border-radius: 4px;"></div>
+                    <div id="resultados-${c.id_consulta}" style="display: none; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.03); border-left: 3px solid #28a745; border-radius: 4px;"></div>
+                </div>
+            `).join('');
+        }
+
+        async function verRecetas(idConsulta, containerId) {
+            const container = document.getElementById(containerId);
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            container.innerHTML = '<small>Cargando recetas...</small>';
+
+            try {
+                const res = await fetch(`clinica-backend/api/recetas.php?id_consulta=${idConsulta}`);
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok || !data.success) throw new Error(data.error || 'Error al obtener recetas.');
+
+                const recetas = data.data || [];
+                if (!recetas.length) {
+                    container.innerHTML = '<small><i>No hay recetas emitidas en esta consulta.</i></small>';
+                    return;
+                }
+
+                container.innerHTML = '<strong>Recetas Prescritas:</strong><ul style="margin: 8px 0; padding-left: 20px;">' + 
+                    recetas.map(r => `
+                        <li style="margin-bottom: 6px;">
+                            <strong>${r.medicamento}</strong> (${r.presentacion || ''})<br>
+                            Dosis: ${r.dosis || 'N/A'} - Frecuencia: ${r.frecuencia || 'N/A'} - Duración: ${r.duracion || 'N/A'}<br>
+                            <small style="color:var(--text-muted);">Indicaciones: ${r.indicaciones || 'Ninguna'}</small>
+                        </li>
+                    `).join('') + '</ul>';
+            } catch (err) {
+                container.innerHTML = `<small style="color: #dc3545;">${err.message}</small>`;
+            }
+        }
+
+        async function verResultados(idConsulta, containerId) {
+            const container = document.getElementById(containerId);
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            container.innerHTML = '<small>Cargando exámenes...</small>';
+
+            try {
+                const res = await fetch(`clinica-backend/api/resultados.php?id_consulta=${idConsulta}`);
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok || !data.success) throw new Error(data.error || 'Error al obtener exámenes.');
+
+                const resultados = data.data || [];
+                if (!resultados.length) {
+                    container.innerHTML = '<small><i>No hay exámenes/resultados para esta consulta.</i></small>';
+                    return;
+                }
+
+                container.innerHTML = '<strong>Exámenes y Resultados:</strong><ul style="margin: 8px 0; padding-left: 20px;">' + 
+                    resultados.map(r => `
+                        <li style="margin-bottom: 6px;">
+                            <strong>${r.tipo_estudio || 'Estudio'}:</strong> ${r.descripcion || 'Sin descripción'}
+                            ${r.ruta_archivo 
+                                ? `<br><a href="${r.ruta_archivo}" target="_blank" style="color: #0066cc; text-decoration: underline;">Ver Adjunto</a>` 
+                                : '<br><small style="color:var(--text-muted);"><i>(Sin archivo adjunto)</i></small>'}
+                        </li>
+                    `).join('') + '</ul>';
+            } catch (err) {
+                container.innerHTML = `<small style="color: #dc3545;">${err.message}</small>`;
+            }
+        }
+
+        document.getElementById('form-consultar-consultas').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            if (!form.reportValidity()) return;
+
+            const container = document.getElementById('resultado-consultas-medicas');
+            const alerta = document.getElementById('alerta-consultas');
+
+            try {
+                await consultarConsultasMedicas(
+                    document.getElementById('consultas_cedula').value,
+                    document.getElementById('consultas_fecha_nacimiento').value,
+                    container
+                );
+                alerta.classList.add('hidden');
+            } catch (error) {
+                alerta.textContent = error.message;
+                alerta.classList.remove('hidden');
+            }
         });
     </script>
 </body>
