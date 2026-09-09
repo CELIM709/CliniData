@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 session_start();
 
 require_once __DIR__ . '/../models/Consulta.php';
+require_once __DIR__ . '/../models/Paciente.php';
 
 
 
@@ -43,6 +44,14 @@ try {
                 echo json_encode(['success' => true, 'data' => $consulta]);
 
             } elseif (isset($_GET['paciente'])) {
+                // validar que el paciente existe y que la fecha de nacimiento sea correcta
+                $fechaNacimiento = trim($_GET['fecha_nacimiento'] ?? '');
+                $paciente = (new Paciente())->obtenerPorCedula($_GET['paciente']);
+                if ($fechaNacimiento === '' || $paciente['fecha_nacimiento'] !== $fechaNacimiento) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false, 'error' => 'Cédula o fecha de nacimiento incorrecta.']);
+                    exit;
+                }
                 $consultas = $consultaModel->obtenerPorPaciente($_GET['paciente']);
                 echo json_encode(['success' => true, 'data' => $consultas]);
 

@@ -22,6 +22,7 @@ $metodo = $_SERVER['REQUEST_METHOD'];
 // 1. Identificar si es una consulta pública de un paciente (Método GET con el parámetro 'paciente')
 $esConsultaPublicaPaciente = ($metodo === 'GET' && isset($_GET['paciente']));
 
+// validar la fecha de nacimiento
 if ($esConsultaPublicaPaciente) {
     $fechaNacimiento = trim($_GET['fecha_nacimiento'] ?? '');
     $paciente = (new Paciente())->obtenerPorCedula($_GET['paciente']);
