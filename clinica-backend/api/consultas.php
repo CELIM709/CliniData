@@ -52,7 +52,10 @@ try {
                     echo json_encode(['success' => false, 'error' => 'Cédula o fecha de nacimiento incorrecta.']);
                     exit;
                 }
-                $consultas = $consultaModel->obtenerPorPaciente($_GET['paciente']);
+                $periodo = $_GET['periodo'] ?? null;
+                $especialidad = $_GET['especialidad'] ?? null;
+
+                $consultas = $consultaModel->obtenerPorPaciente($_GET['paciente'], $periodo, $especialidad);
                 echo json_encode(['success' => true, 'data' => $consultas]);
 
             } elseif (isset($_GET['medico'])) {

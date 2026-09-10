@@ -152,18 +152,40 @@
                                 <option value="E">E</option>
                             </select>
                             <input type="text" id="consultas_cedula_numero" class="form-control" required
-                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
+                                inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
                         </div>
                         <small id="consultas_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
                             La cédula debe tener entre 7 y 8 dígitos.
                         </small>
                         <input type="hidden" id="consultas_cedula" name="cedula">
                     </div>
+
                     <div class="form-group">
                         <label for="consultas_fecha_nacimiento">Fecha de Nacimiento</label>
                         <input type="date" id="consultas_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
                     </div>
+
+                    <!-- Filtro Opcional por Especialidad (Se llena vía JS desde la BD) -->
+                    <div class="form-group">
+                        <label for="consultas_especialidad">Especialidad (Opcional)</label>
+                        <select id="consultas_especialidad" name="especialidad" class="form-control">
+                            <option value="">Todas las especialidades</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro Opcional por Período -->
+                    <div class="form-group">
+                        <label for="consultas_periodo">Período (Opcional)</label>
+                        <select id="consultas_periodo" name="periodo" class="form-control">
+                            <option value="">Todas las fechas</option>
+                            <option value="1w">Última semana</option>
+                            <option value="1m">Último mes</option>
+                            <option value="6m">Últimos 6 meses</option>
+                            <option value="1y">Último año</option>
+                        </select>
+                    </div>
                 </div>
+
                 <div class="form-actions" style="justify-content:flex-start;">
                     <button type="submit" class="btn btn-primary">Buscar Consultas</button>
                 </div>
@@ -208,6 +230,34 @@
                 });
             }
         }
+
+        async function cargarEspecialidades() {
+            const select = document.getElementById('consultas_especialidad');
+            if (!select) return;
+
+            try {
+                const response = await fetch('clinica-backend/api/especialidades.php');
+                const data = await response.json();
+
+                if (data.success && Array.isArray(data.data)) {
+                    // Limpiamos y dejamos la opción por defecto
+                    select.innerHTML = '<option value="">Todas las especialidades</option>';
+
+                    // Llenamos las opciones con la información de la base de datos
+                    data.data.forEach(esp => {
+                        const option = document.createElement('option');
+                        option.value = esp.id_especialidad; 
+                        option.textContent = esp.nombre;     
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error al cargar especialidades desde la base de datos:', error);
+            }
+        }
+
+// Llama a la función automáticamente cuando el HTML termine de cargar
+document.addEventListener('DOMContentLoaded', cargarEspecialidades);
 
         // Formateo de la cedula
         combinarCedula('citas_cedula_letra', 'citas_cedula_numero', 'citas_cedula');
@@ -324,9 +374,19 @@
         });
         */
 
-        // --- NUEVA FUNCIONALIDAD DE CONSULTAS MÉDICAS CON DESPLEGABLES ---
-        async function consultarConsultasMedicas(cedula, fecha, container) {
-            const url = `clinica-backend/api/consultas.php?paciente=${encodeURIComponent(cedula)}&fecha_nacimiento=${encodeURIComponent(fecha)}`;
+        // --- Seccion para ver las consultas medicas y todos sus detalles (agregado filtros por especialidad y periodo) ---
+        async function consultarConsultasMedicas(cedula, fecha, especialidad, periodo, container) {
+            // URL base con los parámetros obligatorios
+            let url = `clinica-backend/api/consultas.php?paciente=${encodeURIComponent(cedula)}&fecha_nacimiento=${encodeURIComponent(fecha)}`;
+
+            // Concatenamos los filtros opcionales si el usuario seleccionó alguno
+            if (especialidad) {
+                url += `&especialidad=${encodeURIComponent(especialidad)}`;
+            }
+            if (periodo) {
+                url += `&periodo=${encodeURIComponent(periodo)}`;
+            }
+
             const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json().catch(() => ({}));
 
@@ -338,25 +398,39 @@
             container.classList.remove('hidden');
 
             if (!consultas.length) {
-                container.innerHTML = `<div class="alert-box">No hay consultas registradas para esta persona.</div>`;
+                container.innerHTML = `<div class="alert-box">No hay consultas registradas para esta persona con los filtros seleccionados.</div>`;
                 return;
             }
 
-            container.innerHTML = consultas.map(c => `
-                <div class="alert-box" style="margin-bottom: 15px; text-align: left; padding: 15px;">
-                    <p><strong>Fecha:</strong> ${c.fecha} | <strong>Médico:</strong> Dr(a). ${c.medico_nombre || ''} ${c.medico_apellido || ''}</p>
-                    <p><strong>Diagnóstico:</strong> ${c.diagnostico || 'Sin diagnóstico registrado'}</p>
-                    <p><strong>Observaciones:</strong> ${c.observaciones || 'N/A'}</p>
-                    
-                    <div style="margin-top: 12px; display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-outline" style="font-size: 13px; padding: 6px 12px;" onclick="verRecetas(${c.id_consulta}, 'recetas-${c.id_consulta}')">Ver Recetas</button>
-                        <button type="button" class="btn btn-outline" style="font-size: 13px; padding: 6px 12px;" onclick="verResultados(${c.id_consulta}, 'resultados-${c.id_consulta}')">Ver Exámenes</button>
-                    </div>
+            container.innerHTML = consultas.map(c => {
+                // Formateamos el timestamptz a fecha y hora corta
+                const fechaFormateada = c.fecha 
+                    ? new Date(c.fecha).toLocaleString('es-VE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    })
+                    : 'Sin fecha';
 
-                    <div id="recetas-${c.id_consulta}" style="display: none; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.03); border-left: 3px solid #0066cc; border-radius: 4px;"></div>
-                    <div id="resultados-${c.id_consulta}" style="display: none; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.03); border-left: 3px solid #28a745; border-radius: 4px;"></div>
-                </div>
-            `).join('');
+                return `
+                    <div class="alert-box" style="margin-bottom: 15px; text-align: left; padding: 15px;">
+                        <p><strong>Fecha:</strong> ${fechaFormateada} | <strong>Médico:</strong> Dr(a). ${c.medico_nombre || ''} ${c.medico_apellido || ''}</p>
+                        <p><strong>Diagnóstico:</strong> ${c.diagnostico || 'Sin diagnóstico registrado'}</p>
+                        <p><strong>Observaciones:</strong> ${c.observaciones || 'N/A'}</p>
+                        
+                        <div style="margin-top: 12px; display: flex; gap: 10px;">
+                            <button type="button" class="btn btn-outline" style="font-size: 13px; padding: 6px 12px;" onclick="verRecetas(${c.id_consulta}, 'recetas-${c.id_consulta}')">Ver Recetas</button>
+                            <button type="button" class="btn btn-outline" style="font-size: 13px; padding: 6px 12px;" onclick="verResultados(${c.id_consulta}, 'resultados-${c.id_consulta}')">Ver Exámenes</button>
+                        </div>
+
+                        <div id="recetas-${c.id_consulta}" style="display: none; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.03); border-left: 3px solid #0066cc; border-radius: 4px;"></div>
+                        <div id="resultados-${c.id_consulta}" style="display: none; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.03); border-left: 3px solid #28a745; border-radius: 4px;"></div>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function verRecetas(idConsulta, containerId) {
@@ -435,13 +509,25 @@
             const form = e.currentTarget;
             if (!form.reportValidity()) return;
 
-            const container = document.getElementById('resultado-consultas-medicas');
             const alerta = document.getElementById('alerta-consultas');
+            const container = document.getElementById('resultado-consultas-medicas');
+
+            // 1. Obtener la cédula (con respaldo por si el campo hidden no se llenó)
+            const cedulaInput = document.getElementById('consultas_cedula').value;
+            const cedula = cedulaInput || (document.getElementById('consultas_cedula_letra').value + '-' + document.getElementById('consultas_cedula_numero').value);
+
+            // 2. Obtener la fecha y los nuevos filtros
+            const fecha = document.getElementById('consultas_fecha_nacimiento').value;
+            const especialidad = document.getElementById('consultas_especialidad').value;
+            const periodo = document.getElementById('consultas_periodo').value;
 
             try {
+                // 3. Enviar los 5 parámetros en el orden exacto de la función
                 await consultarConsultasMedicas(
-                    document.getElementById('consultas_cedula').value,
-                    document.getElementById('consultas_fecha_nacimiento').value,
+                    cedula,
+                    fecha,
+                    especialidad,
+                    periodo,
                     container
                 );
                 alerta.classList.add('hidden');
