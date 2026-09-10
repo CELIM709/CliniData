@@ -59,18 +59,32 @@
                                 <option value="E">E</option>
                             </select>
                             <input type="text" id="citas_cedula_numero" class="form-control" required
-                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
+                                inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 30437441">
                         </div>
                         <small id="citas_cedula_error" class="hidden" style="color:#dc3545; font-size:12px;">
                             La cédula debe tener entre 7 y 8 dígitos.
                         </small>
                         <input type="hidden" id="citas_cedula" name="cedula">
                     </div>
+
                     <div class="form-group">
                         <label for="citas_fecha_nacimiento">Fecha de Nacimiento</label>
                         <input type="date" id="citas_fecha_nacimiento" name="fecha_nacimiento" class="form-control" required>
                     </div>
+
+                    <!-- Filtro Opcional por Estado -->
+                    <div class="form-group">
+                        <label for="citas_estado">Estado (Opcional)</label>
+                        <select id="citas_estado" name="estado" class="form-control">
+                            <option value="">Todas las citas</option>
+                            <option value="PENDIENTE">Pendientes</option>
+                            <option value="CONFIRMADA">Confirmadas</option>
+                            <option value="COMPLETADA">Completadas</option>
+                            <option value="CANCELADA">Canceladas</option>
+                        </select>
+                    </div>
                 </div>
+
                 <div class="form-actions" style="justify-content:flex-start;">
                     <button type="submit" class="btn btn-primary">Buscar Mis Citas</button>
                 </div>
@@ -220,15 +234,82 @@
             container.innerHTML = rows.length ? rows.map((row) => `<div class="alert-box">${row.fecha_inicio || row.fecha_resultado || 'Registro'} · ${row.medico_nombre || row.nombre_estudio || ''} · ${row.estado || row.descripcion || ''}</div>`).join('') : `<div class="alert-box">${emptyMessage}</div>`;
         }
 
+        async function consultarCitasPublico(cedula, fechaNacimiento, estado = '', container, emptyMessage = 'No se encontraron citas.') {
+            try {
+                let url = `clinica-backend/api/citas.php?paciente=${encodeURIComponent(cedula)}&fecha_nacimiento=${encodeURIComponent(fechaNacimiento)}`;
+                if (estado) {
+                    url += `&estado=${encodeURIComponent(estado)}`;
+                }
+
+                const response = await fetch(url, { cache: 'no-store' });
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'No se pudo realizar la consulta de citas.');
+                }
+
+                const rows = data.data || [];
+                container.classList.remove('hidden');
+
+                if (!rows.length) {
+                    container.innerHTML = `<div class="alert-box">${emptyMessage}</div>`;
+                    return;
+                }
+
+                container.innerHTML = rows.map((row) => {
+                    // Formato de Fecha y Horario
+                    const inicio = new Date(row.fecha_inicio);
+                    const fin = row.fecha_fin ? new Date(row.fecha_fin) : null;
+
+                    const fechaFormat = inicio.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const horaInicio = inicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const horaFin = fin ? fin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+                    const horario = horaFin ? `${horaInicio} - ${horaFin}` : horaInicio;
+
+                    return `
+                        <div class="alert-box" style="margin-bottom:12px; text-align:left;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:6px; margin-bottom:8px;">
+                                <span><strong>${fechaFormat}</strong> · <span>${horario}</span></span>
+                                <span style="font-weight:bold; padding:2px 8px; border-radius:4px; font-size:12px; background:rgba(0,0,0,0.06);">${row.estado}</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:14px;">
+                                <div><strong>Doctor:</strong> Dr. ${row.medico_nombre} ${row.medico_apellido}</div>
+                                <div><strong>Consultorio:</strong> ${row.consultorio}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                container.classList.remove('hidden');
+                container.innerHTML = `<div class="alert-box" style="color:#dc3545;">${error.message}</div>`;
+            }
+        }
+
         document.getElementById('form-consultar-citas').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.currentTarget;
             if (!form.reportValidity()) return;
+
             const alerta = document.getElementById('alerta-citas');
+
+            // 1. Capturamos los valores del formulario
+            const cedulaInput = document.getElementById('citas_cedula').value;
+            // Si citas_cedula está vacío, unimos la letra y el número directamente
+            const cedula = cedulaInput || (document.getElementById('citas_cedula_letra').value + document.getElementById('citas_cedula_numero').value);
+            
+            const fecha = document.getElementById('citas_fecha_nacimiento').value;
+            const estado = document.getElementById('citas_estado').value; // El nuevo filtro opcional
+            const contenedor = document.getElementById('resultado-citas');
+
             try {
-                await consultarPublico('citas.php', document.getElementById('citas_cedula').value, document.getElementById('citas_fecha_nacimiento').value, document.getElementById('resultado-citas'), 'No hay citas registradas.');
+                // 2. Llamamos a la nueva función
+                await consultarCitasPublico(cedula, fecha, estado, contenedor, 'No Se Encontraron Citas' + (estado ? ` con estado: ${estado}` : '.'));
                 alerta.classList.add('hidden');
-            } catch (error) { alerta.textContent = error.message; alerta.classList.remove('hidden'); }
+            } catch (error) { 
+                alerta.textContent = error.message; 
+                alerta.classList.remove('hidden'); 
+            }
         });
 
         /*

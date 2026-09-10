@@ -183,24 +183,34 @@ class Cita {
     /**
      * Obtener el historial de citas de un paciente
      */
-    public function obtenerPorPaciente($cedula_paciente) {
+    public function obtenerPorPaciente($cedula_paciente, $estado = null) {
         $sql = "SELECT c.id_cita,
-                       lower(c.rango_cita) AS fecha_inicio,
-                       upper(c.rango_cita) AS fecha_fin,
-                       c.consultorio, 
-                       c.estado,
-                       p.nombre AS medico_nombre, 
-                       p.apellido AS medico_apellido,
-                       p.telefono AS medico_telefono
+                    lower(c.rango_cita) AS fecha_inicio,
+                    upper(c.rango_cita) AS fecha_fin,
+                    c.consultorio, 
+                    c.estado,
+                    p.nombre AS medico_nombre, 
+                    p.apellido AS medico_apellido,
+                    p.telefono AS medico_telefono
                 FROM cita c
                 INNER JOIN medico m ON c.cedula_medico = m.cedula
                 INNER JOIN empleado e ON m.cedula = e.cedula
                 INNER JOIN persona p ON e.cedula = p.cedula
-                WHERE c.cedula_paciente = :cedula_paciente
-                ORDER BY fecha_inicio DESC";
+                WHERE c.cedula_paciente = :cedula_paciente";
+
+        $params = [':cedula_paciente' => $cedula_paciente];
+
+        // Si se pasa un estado válido, concatenamos la condición
+        if (!empty($estado)) {
+            $sql .= " AND c.estado = :estado";
+            $params[':estado'] = $estado;
+        }
+
+        // El ORDER BY siempre va al final de la consulta
+        $sql .= " ORDER BY fecha_inicio DESC";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':cedula_paciente' => $cedula_paciente]);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
