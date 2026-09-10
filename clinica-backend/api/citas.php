@@ -58,6 +58,7 @@ try {
             // consultar por medico, o porpaciente, por deferto solo pendientes
             $medico = $_GET['medico'] ?? null;
             $paciente = $_GET['paciente'] ?? null;
+    
             $soloPendientes = isset($_GET['pendientes']) && $_GET['pendientes'] === 'true';
 
             if ($medico) {
@@ -66,9 +67,10 @@ try {
                     : $citaModel->obtenerPorMedico($medico);
                 echo json_encode(['success' => true, 'data' => $citas]);
             } elseif ($paciente) {
+                $estado = $_GET['estado'] ?? null;
                 $citas = $soloPendientes 
                     ? $citaModel->obtenerPendientesPorPaciente($paciente)
-                    : $citaModel->obtenerPorPaciente($paciente);
+                    : $citaModel->obtenerPorPaciente($paciente, $estado);
                 echo json_encode(['success' => true, 'data' => $citas]);
             } else {
                 http_response_code(400);
