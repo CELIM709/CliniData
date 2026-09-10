@@ -95,20 +95,52 @@ class Consulta {
     /**
      * Obtener el historial completo de consultas de un paciente
      */
-    public function obtenerPorPaciente($cedula_paciente) {
+    public function obtenerPorPaciente($cedula_paciente, $periodo = null, $id_especialidad = null) {
+        // 1. Consulta base
         $sql = "SELECT c.id_consulta, c.fecha, c.diagnostico, c.observaciones, c.costo, c.id_cita,
-                       p_med.nombre AS medico_nombre, 
-                       p_med.apellido AS medico_apellido,
-                       m.carnet_medico
+                    p_med.nombre AS medico_nombre, 
+                    p_med.apellido AS medico_apellido,
+                    m.carnet_medico
                 FROM consulta c
                 INNER JOIN medico m ON c.cedula_medico = m.cedula
                 INNER JOIN empleado e ON m.cedula = e.cedula
                 INNER JOIN persona p_med ON e.cedula = p_med.cedula
-                WHERE c.cedula_paciente = :cedula_paciente
-                ORDER BY c.fecha DESC";
+                WHERE c.cedula_paciente = :cedula_paciente";
 
+        // 2. Arreglo inicial de parámetros
+        $params = [':cedula_paciente' => $cedula_paciente];
+
+        // 3. Filtro opcional por Especialidad
+        if (!empty($id_especialidad)) {
+            $sql .= " AND c.cedula_medico IN (
+                        SELECT cedula_medico 
+                        FROM medico_especialidad 
+                        WHERE id_especialidad = :id_especialidad
+                    )";
+            $params[':id_especialidad'] = $id_especialidad;
+        }
+
+        // 4. Filtro opcional por Período de tiempo (basado en c.fecha)
+        if (!empty($periodo)) {
+            switch ($periodo) {
+                case '1m':
+                    $sql .= " AND c.fecha >= CURRENT_DATE - INTERVAL '1 month'";
+                    break;
+                case '6m':
+                    $sql .= " AND c.fecha >= CURRENT_DATE - INTERVAL '6 months'";
+                    break;
+                case '1y':
+                    $sql .= " AND c.fecha >= CURRENT_DATE - INTERVAL '1 year'";
+                    break;
+            }
+        }
+
+        // 5. El ordenamiento siempre va al final
+        $sql .= " ORDER BY c.fecha DESC";
+
+        // 6. Preparación y ejecución
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':cedula_paciente' => $cedula_paciente]);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
