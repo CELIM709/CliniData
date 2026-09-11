@@ -265,6 +265,40 @@ document.addEventListener('DOMContentLoaded', () => {
             list.append(option);
         });
     }
+
+    async function autocompletarPersonaRegistro() {
+        const num = val('reg_cedula_numero');
+        // Validar que la cédula tenga entre 7 y 8 dígitos antes de consultar
+        if (!/^\d{7,8}$/.test(num)) return;
+
+        const cedulaCompleta = id('reg_cedula_letra', 'reg_cedula_numero');
+
+        try {
+            const response = await api(`personas.php?cedula=${encodeURIComponent(cedulaCompleta)}`);
+            const persona = response.data;
+
+            if (persona) {
+                set('reg_nombre', persona.nombre);
+                set('reg_apellido', persona.apellido);
+                set('reg_fecha_nacimiento', persona.fecha_nacimiento);
+                set('reg_email', persona.email);
+                set('reg_direccion', persona.direccion);
+
+                if (persona.telefono) {
+                    splitPhone(persona.telefono, 'reg_telefono_prefijo', 'reg_telefono_numero');
+                }
+            }
+        } catch (error) {
+            // Si la persona no está registrada previamente en la BD, no hacemos nada
+            // para permitir que el usuario ingrese los datos manualmente.
+            console.log('Persona nueva o no encontrada:', error.message);
+        }
+    }
+
+    $('reg_cedula_numero')?.addEventListener('blur', autocompletarPersonaRegistro);
+    $('reg_cedula_letra')?.addEventListener('change', autocompletarPersonaRegistro);
+
+    
     function configureLaboratoristaSession(user) {
         const [letter, number] = String(user?.cedula || '').split('-');
         if (!letter || !number || !$('reg_laboratorista_numero')) return;
