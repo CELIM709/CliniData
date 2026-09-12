@@ -36,9 +36,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function phone(prefix, number) { return val(number) ? `${val(prefix)}-${val(number)}` : ''; }
     function splitPhone(value, prefix, number) {
-        const parts = String(value || '').split('-');
-        set(prefix, parts.length > 1 ? parts[0] : '0424');
-        set(number, parts.length > 1 ? parts.slice(1).join('-') : parts[0]);
+        if (!value) {
+            set(prefix, '0424');
+            set(number, '');
+            return;
+        }
+
+        // Limpiamos espacios o caracteres extra
+        const str = String(value).trim();
+
+        // Caso 1: Viene formateado con guion (ej: "0424-1234567")
+        if (str.includes('-')) {
+            const parts = str.split('-');
+            set(prefix, parts[0]);
+            set(number, parts.slice(1).join(''));
+            return;
+        }
+
+        // Caso 2: Viene todo junto con 11 dígitos (ej: "04241234567")
+        if (str.length === 11) {
+            set(prefix, str.slice(0, 4));  // Toma los primeros 4 dígitos ("0424")
+            set(number, str.slice(4));     // Toma el resto ("1234567")
+            return;
+        }
+
+        // Caso 3: Viene sin el '0' inicial y tiene 10 dígitos (ej: "4241234567")
+        if (str.length === 10) {
+            set(prefix, '0' + str.slice(0, 3)); // Le añade el 0 ("0424")
+            set(number, str.slice(3));
+            return;
+        }
+
+        // Caso por defecto si el formato es desconocido
+        set(prefix, '0424');
+        set(number, str);
     }
 
     function bind(selector, callback) {
@@ -176,14 +207,28 @@ document.addEventListener('DOMContentLoaded', () => {
     $('id_cita')?.addEventListener('change', () => {
         const appointment = appointmentOptions.get(val('id_cita'));
         if (!appointment) return;
+
         const [patientLetter, patientNumber] = String(appointment.cedula_paciente || '').split('-');
         const [doctorLetter, doctorNumber] = String(appointment.cedula_medico || '').split('-');
+
         set('edit_cedula_paciente_letra', patientLetter);
         set('edit_cedula_paciente_numero', patientNumber);
         set('edit_cedula_paciente', appointment.cedula_paciente);
         set('edit_cedula_medico_letra', doctorLetter);
         set('edit_cedula_medico_numero', doctorNumber);
         set('edit_cedula_medico', appointment.cedula_medico);
+
+        // Cargar fecha de inicio y fin formateadas para input datetime-local
+        if (appointment.fecha_inicio) {
+            set('edit_rango_cita_inicio', String(appointment.fecha_inicio).replace(' ', 'T').slice(0, 16));
+        }
+        if (appointment.fecha_fin) {
+            set('edit_rango_cita_fin', String(appointment.fecha_fin).replace(' ', 'T').slice(0, 16));
+        }
+
+        // Cargar consultorio y estado si existen en la respuesta de la API
+        if (appointment.consultorio) set('edit_consultorio_numero', appointment.consultorio);
+        if (appointment.estado) set('edit_estado', appointment.estado);
     });
     bind('#cita-edicion form', async () => {
         configureAppointmentStartLimits();

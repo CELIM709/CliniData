@@ -389,6 +389,7 @@
                     <div class="form-group">
                         <label for="edit_estado">Estado de la Cita</label>
                         <select id="edit_estado" name="estado" class="form-control" required>
+                            <option value="">Seleccione...</option>
                             <option value="CONFIRMADA">Confirmada</option>
                             <option value="CANCELADA">Cancelada</option>
                         </select>
@@ -398,11 +399,11 @@
                 <div class="form-group">
                     <label>Rango de la Cita (Inicio - Fin)</label>
                     <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="datetime-local" id="edit_rango_cita_inicio" class="form-control" required value="2026-09-10T08:00">
+                        <input type="datetime-local" id="edit_rango_cita_inicio" class="form-control" required>
                         <span>hasta</span>
-                        <input type="datetime-local" id="edit_rango_cita_fin" class="form-control" required value="2026-09-10T09:00">
+                        <input type="datetime-local" id="edit_rango_cita_fin" class="form-control" required>
                     </div>
-                    <input type="hidden" id="edit_rango_cita" name="rango_cita" value="[2026-09-10 08:00, 2026-09-10 09:00)">
+                    <input type="hidden" id="edit_rango_cita" name="rango_cita">
                 </div>
 
                 <div class="form-actions">

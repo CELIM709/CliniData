@@ -18,7 +18,7 @@ class Consulta {
             $cedulaMedico   = $datos['cedula_medico'];
             $cedulaPaciente = $datos['cedula_paciente'];
 
-            // 1. COSTO AUTOMÁTICO: Si no se pasa un costo explícito, obtener la tarifa del médico
+            // 1. COSTO AUTOMÁTICO
             $costo = $datos['costo'] ?? null;
             if ($costo === null) {
                 $sqlTarifa = "SELECT tarifa FROM medico WHERE cedula = :cedula_medico";
@@ -31,16 +31,16 @@ class Consulta {
                 }
             }
 
-            // 2. CITA AUTOMÁTICA: Si no se especifica 'id_cita', buscar la cita más próxima del paciente con el médico
+            // 2. CITA AUTOMÁTICA
             $idCita = $datos['id_cita'] ?? null;
             if ($idCita === null) {
                 $sqlBuscarCita = "SELECT id_cita 
-                                  FROM cita 
-                                  WHERE cedula_paciente = :cedula_paciente 
+                                FROM cita 
+                                WHERE cedula_paciente = :cedula_paciente 
                                     AND cedula_medico = :cedula_medico 
                                     AND estado = 'CONFIRMADA'
-                                  ORDER BY lower(rango_cita) ASC 
-                                  LIMIT 1";
+                                ORDER BY lower(rango_cita) ASC 
+                                LIMIT 1";
                 
                 $stmtBuscarCita = $this->db->prepare($sqlBuscarCita);
                 $stmtBuscarCita->execute([
@@ -51,30 +51,39 @@ class Consulta {
                 $idCita = $stmtBuscarCita->fetchColumn() ?: null;
             }
 
-            // 3. Registrar la consulta
+            // 3. VALIDAR ESTADO DE LA CITA (Antes de insertar)
+            if ($idCita !== null) {
+                $stmtCita = $this->db->prepare("SELECT estado FROM cita WHERE id_cita = :id_cita");
+                $stmtCita->execute([':id_cita' => $idCita]);
+                $estadoCita = $stmtCita->fetchColumn();
+
+                if ($estadoCita !== 'CONFIRMADA') {
+                    throw new Exception('La consulta solo puede asociarse a una cita en estado CONFIRMADA.');
+                }
+            }
+
+            // 4. REGISTRAR LA CONSULTA
             $sql = "INSERT INTO consulta (diagnostico, observaciones, costo, cedula_paciente, cedula_medico, id_cita)
                     VALUES (:diagnostico, :observaciones, :costo, :cedula_paciente, :cedula_medico, :id_cita)
                     RETURNING id_consulta";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':diagnostico'      => $datos['diagnostico'],
-                ':observaciones'    => $datos['observaciones'] ?? null,
-                ':costo'            => $costo,
-                ':cedula_paciente'  => $cedulaPaciente,
-                ':cedula_medico'    => $cedulaMedico,
-                ':id_cita'          => $idCita
+                ':diagnostico'     => $datos['diagnostico'],
+                ':observaciones'   => $datos['observaciones'] ?? null,
+                ':costo'           => $costo,
+                ':cedula_paciente' => $cedulaPaciente,
+                ':cedula_medico'   => $cedulaMedico,
+                ':id_cita'         => $idCita
             ]);
 
             $idConsulta = $stmt->fetchColumn();
 
-            // 4. La cita ya debe estar confirmada para poder registrar la consulta.
+            // 5. CAMBIAR ESTADO DE LA CITA A COMPLETADA (o ATENDIDA)
             if ($idCita !== null) {
-                $stmtCita = $this->db->prepare("SELECT estado FROM cita WHERE id_cita = :id_cita AND estado = 'CONFIRMADA'");
-                $stmtCita->execute([':id_cita' => $idCita]);
-                if ($stmtCita->fetchColumn() === false) {
-                    throw new Exception('La consulta solo puede asociarse a una cita confirmada.');
-                }
+                $sqlUpdate = "UPDATE cita SET estado = 'COMPLETADA' WHERE id_cita = :id_cita";
+                $stmtUpdate = $this->db->prepare($sqlUpdate);
+                $stmtUpdate->execute([':id_cita' => $idCita]);
             }
 
             $this->db->commit();
