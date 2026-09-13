@@ -34,10 +34,11 @@ class Estudio {
                 ]);
             }
 
+            /*
             $stmtCita = $this->db->prepare("UPDATE cita SET estado = 'COMPLETADA'
                 WHERE id_cita = (SELECT id_cita FROM consulta WHERE id_consulta = :id_consulta)
                   AND estado = 'CONFIRMADA'");
-            $stmtCita->execute([':id_consulta' => $id_consulta]);
+            $stmtCita->execute([':id_consulta' => $id_consulta]);*/
 
             $this->db->commit();
             return true;

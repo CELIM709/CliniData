@@ -206,3 +206,81 @@ CREATE TABLE receta (
     CONSTRAINT fk_receta_medicamento 
         FOREIGN KEY (id_medicamento) REFERENCES medicamento(id_medicamento)
 );
+
+
+-- Triggers --
+
+-- 1. Trigger para actualizar el estado de la cita tras completar la consulta
+CREATE OR REPLACE FUNCTION fn_completar_cita_tras_consulta()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_estado_actual VARCHAR(20);
+BEGIN
+    IF NEW.id_cita IS NOT NULL THEN
+        -- Obtener estado actual de la cita
+        SELECT estado INTO v_estado_actual 
+        FROM cita 
+        WHERE id_cita = NEW.id_cita;
+
+        -- Validar estado CONFIRMADA
+        IF v_estado_actual IS NULL OR v_estado_actual != 'CONFIRMADA' THEN
+            RAISE EXCEPTION 'La consulta solo puede asociarse a una cita en estado CONFIRMADA (Estado actual: %).', 
+                COALESCE(v_estado_actual, 'NO EXISTE');
+        END IF;
+
+        -- Actualizar estado de la cita
+        UPDATE cita
+        SET estado = 'COMPLETADA'
+        WHERE id_cita = NEW.id_cita;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. Eliminar el trigger si ya existía para evitar duplicados
+DROP TRIGGER IF EXISTS trg_completar_cita_tras_consulta ON consulta;
+
+-- 3. Crear el trigger vinculado a la tabla consulta
+CREATE TRIGGER trg_completar_cita_tras_consulta
+AFTER INSERT ON consulta
+FOR EACH ROW
+EXECUTE FUNCTION fn_completar_cita_tras_consulta();
+
+
+
+-- 1. trigger para marcar el estudio como realizado
+CREATE OR REPLACE FUNCTION fn_marcar_estudio_realizado()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_estado_actual VARCHAR(20);
+BEGIN
+    -- Obtener el estado actual del estudio con bloqueo de fila
+    SELECT estado INTO v_estado_actual
+    FROM estudio
+    WHERE id_estudio = NEW.id_estudio;
+
+    -- Validar existencia y estado
+    IF v_estado_actual IS NULL THEN
+        RAISE EXCEPTION 'El estudio con ID % no existe.', NEW.id_estudio;
+    END IF;
+
+    -- Cambiar el estado del estudio
+    UPDATE estudio
+    SET estado = 'REALIZADO'
+    WHERE id_estudio = NEW.id_estudio;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. Eliminar el trigger si ya existía para evitar duplicados
+DROP TRIGGER IF EXISTS trg_marcar_estudio_realizado ON resultado;
+
+-- 3. Crear el trigger en la tabla resultado
+CREATE TRIGGER trg_marcar_estudio_realizado
+AFTER INSERT ON resultado
+FOR EACH ROW
+EXECUTE FUNCTION fn_marcar_estudio_realizado();
+
+

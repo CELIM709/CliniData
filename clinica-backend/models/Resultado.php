@@ -17,9 +17,11 @@ class Resultado {
 
             $stmtEstado = $this->db->prepare("SELECT estado FROM estudio WHERE id_estudio = :id_estudio FOR UPDATE");
             $stmtEstado->execute([':id_estudio' => $id_estudio]);
+
+            /*
             if ($stmtEstado->fetchColumn() !== 'PENDIENTE') {
                 throw new Exception('Solo se puede cargar un resultado para un estudio pendiente.');
-            }
+            }*/
 
             $sql = "INSERT INTO resultado (descripcion, ruta_archivo, id_estudio)
                     VALUES (:descripcion, :ruta_archivo, :id_estudio)
@@ -32,8 +34,12 @@ class Resultado {
             ]);
             $idResultado = $stmt->fetchColumn();
 
+            /*
             $stmtEstado = $this->db->prepare("UPDATE estudio SET estado = 'REALIZADO' WHERE id_estudio = :id_estudio");
             $stmtEstado->execute([':id_estudio' => $id_estudio]);
+                */
+
+
             $this->db->commit();
             return $idResultado;
         } catch (Exception $e) {

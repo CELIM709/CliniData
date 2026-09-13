@@ -51,6 +51,7 @@ class Consulta {
                 $idCita = $stmtBuscarCita->fetchColumn() ?: null;
             }
 
+            /*
             // 3. VALIDAR ESTADO DE LA CITA (Antes de insertar)
             if ($idCita !== null) {
                 $stmtCita = $this->db->prepare("SELECT estado FROM cita WHERE id_cita = :id_cita");
@@ -61,6 +62,7 @@ class Consulta {
                     throw new Exception('La consulta solo puede asociarse a una cita en estado CONFIRMADA.');
                 }
             }
+                */
 
             // 4. REGISTRAR LA CONSULTA
             $sql = "INSERT INTO consulta (diagnostico, observaciones, costo, cedula_paciente, cedula_medico, id_cita)
@@ -79,12 +81,14 @@ class Consulta {
 
             $idConsulta = $stmt->fetchColumn();
 
+            /*
             // 5. CAMBIAR ESTADO DE LA CITA A COMPLETADA (o ATENDIDA)
             if ($idCita !== null) {
                 $sqlUpdate = "UPDATE cita SET estado = 'COMPLETADA' WHERE id_cita = :id_cita";
                 $stmtUpdate = $this->db->prepare($sqlUpdate);
                 $stmtUpdate->execute([':id_cita' => $idCita]);
             }
+                */
 
             $this->db->commit();
             return $idConsulta;
