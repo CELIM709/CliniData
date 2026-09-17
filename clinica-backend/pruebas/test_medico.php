@@ -28,12 +28,12 @@ try {
 
     // 3. Datos del Médico
     $datosPersona = [
-        'cedula'           => 'V-11111111',
+        'cedula'           => 'V-67676767',
         'nombre'           => 'One Puccino',
         'apellido'         => 'Mendoza',
         'fecha_nacimiento' => '1982-08-25',
         'telefono'         => '04121112233',
-        'email'            => 'one.mendoza@email.com',
+        'email'            => 'on67@email.com',
         'direccion'        => 'Av. Las Delicias'
     ];
 
@@ -45,12 +45,12 @@ try {
     ];
 
     $datosMedico = [
-        'carnet_medico' => 'MPPS-987111',
+        'carnet_medico' => 'MPPS-64111',
         'tarifa'        => 45.00
     ];
 
     // 4. Registrar Médico con su especialidad
-    if ($medicoModel->registrarMedico($datosPersona, $datosEmpleado, $datosMedico, [$idEspecialidad])) {
+    if ($medicoModel->registrarMedico($datosPersona, $datosEmpleado, $datosMedico, [1, 2])) {
         echo "¡Médico registrado con éxito y especialidad vinculada!\n\n";
 
         // 5. Consultar información completa

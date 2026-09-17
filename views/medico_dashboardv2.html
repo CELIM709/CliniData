@@ -19,10 +19,12 @@
             <li><a onclick="showSection('mis-citas')" id="link-mis-citas">Mis Citas</a></li>
             <li><a onclick="showSection('mis-consultas')" id="link-mis-consultas">Mis Consultas</a></li>
             <li><a onclick="showSection('paciente-buscar')" id="link-paciente-buscar">Buscar Paciente / Historia</a></li>
+
+            <div style="margin-top: auto;">
+                <a href="#" id="btn-logout" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
+            </div>
         </ul>
-        <div style="margin-top: auto;">
-            <a href="login.html" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
-        </div>
+        
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
@@ -81,16 +83,24 @@
 
         <!-- 2. SECCIÓN: MIS CITAS CONFIRMADAS -->
         <section id="mis-citas" class="card hidden">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 class="card-title" style="margin: 0;">Citas Confirmadas Asignadas</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                <h3 class="card-title" style="margin: 0;">Mis Citas</h3>
+                
+                <!-- Botones de filtro rápido -->
+                <div class="filter-tabs" style="display: flex; gap: 6px;">
+                    <button class="btn btn-sm btn-filter active" onclick="filtrarCitasDoctor('hoy')">Hoy</button>
+                    <button class="btn btn-sm btn-filter" onclick="filtrarCitasDoctor('confirmada')">Confirmadas</button>
+                    <button class="btn btn-sm btn-filter" onclick="filtrarCitasDoctor('pendiente')">Pendientes</button>
+                    <button class="btn btn-sm btn-filter" onclick="filtrarCitasDoctor('todas')">Todas</button>
+                </div>
             </div>
-            
+
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
                     <thead>
                         <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
-                            <th style="padding: 12px 8px;">ID Cita</th>
-                            <th style="padding: 12px 8px;">Cedula</th>
+                            <th style="padding: 12px 8px;">ID</th>
+                            <th style="padding: 12px 8px;">Cedula Paciente</th>
                             <th style="padding: 12px 8px;">Paciente</th>
                             <th style="padding: 12px 8px;">Horario</th>
                             <th style="padding: 12px 8px;">Consultorio</th>
@@ -99,7 +109,7 @@
                         </tr>
                     </thead>
                     <tbody id="mis-citas-lista">
-                        <tr><td colspan="6" style="padding: 14px 8px;">Cargando citas confirmadas...</td></tr>
+                        <tr><td colspan="6" style="padding: 14px 8px;">Cargando citas...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -112,7 +122,7 @@
             <div class="card">
                 <h3 class="card-title">Historial de Consultas Realizadas</h3>
                 <button type="button" class="btn btn-outline" onclick="crearNuevaConsultaSinCita()">+ Nueva Consulta (Sin Cita)</button>
-                <input type="text" id="buscar_consulta_cedula" class="form-control" placeholder="Buscar por cédula o nombre del paciente..." style="margin-bottom: 15px;">
+                <input type="text" id="buscar_consulta_cedula" class="form-control" placeholder="Buscar por cédula | nombre del paciente | fecha..." style="margin-bottom: 15px;">
                 <div style="overflow-x: auto;">
 
                     
@@ -122,6 +132,7 @@
                                 <th style="padding: 12px 8px;">ID Consulta</th>
                                 <th style="padding: 12px 8px;">Paciente</th>
                                 <th style="padding: 12px 8px;">Cedula</th>
+                                <th style="padding: 12px 8px;">Fecha</th>
                                 <th style="padding: 12px 8px;">Diagnóstico</th>
                                 <th style="padding: 12px 8px;">Costo</th>
                                 <th style="padding: 12px 8px; text-align: right;">Acción</th>

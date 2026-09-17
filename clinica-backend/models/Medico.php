@@ -148,4 +148,53 @@ class Medico {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($valores);
     }
+
+
+    /**
+     * Obtener lista de médicos filtrados por el ID de una especialidad
+     */
+    public function obtenerPorEspecialidad($idEspecialidad) {
+        $sql = "SELECT p.cedula, p.nombre, p.apellido, p.telefono, p.email,
+                       e.salario, e.fecha_contratado,
+                       m.carnet_medico, m.tarifa,
+                       h.dias AS horario_dias, h.hora_entrada, h.hora_salida,
+                       STRING_AGG(esp.nombre, ', ') AS especialidades
+                FROM medico m
+                INNER JOIN empleado e ON m.cedula = e.cedula
+                INNER JOIN persona p ON e.cedula = p.cedula
+                INNER JOIN horario h ON e.id_horario = h.id_horario
+                LEFT JOIN medico_especialidad me ON m.cedula = me.cedula_medico
+                LEFT JOIN especialidad esp ON me.id_especialidad = esp.id_especialidad
+                WHERE m.cedula IN (
+                    SELECT me_sub.cedula_medico 
+                    FROM medico_especialidad me_sub 
+                    WHERE me_sub.id_especialidad = :id_especialidad
+                )
+                GROUP BY p.cedula, p.nombre, p.apellido, p.telefono, p.email,
+                         e.salario, e.fecha_contratado, m.carnet_medico, m.tarifa,
+                         h.dias, h.hora_entrada, h.hora_salida";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id_especialidad' => $idEspecialidad]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+ * Obtener los médicos con mayor cantidad de citas/consultas agendadas
+ */
+    public function obtenerTopMedicosCitas($limit = 5) {
+        $sql = "SELECT p.cedula, p.nombre, p.apellido, 
+                    COUNT(c.id_consulta) AS total_citas
+                FROM medico m
+                INNER JOIN persona p ON m.cedula = p.cedula
+                INNER JOIN consulta c ON m.cedula = c.cedula_medico
+                GROUP BY p.cedula, p.nombre, p.apellido
+                ORDER BY total_citas DESC
+                LIMIT :limit";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 }

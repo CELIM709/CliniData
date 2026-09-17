@@ -150,4 +150,11 @@ class Empleado {
             'estudios_pendientes' => $this->db->query("SELECT COUNT(*) FROM estudio WHERE estado = 'PENDIENTE'")->fetchColumn()
         ];
     }
+    
+    public function obtenerTodosHorarios() {
+        $sql = "SELECT id_horario, dias, hora_entrada, hora_salida FROM horario ORDER BY id_horario ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+}
 }

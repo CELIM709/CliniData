@@ -37,6 +37,15 @@ try {
                 break;
             }
 
+            // Opción 2: Obtener Lista de Horarios (?action=horarios o ?horarios=true)
+            if ((isset($_GET['action']) && $_GET['action'] === 'horarios') || isset($_GET['horarios'])) {
+                
+                
+                $horarios = $empleadoModel->obtenerTodosHorarios();
+                echo json_encode(['success' => true, 'data' => $horarios]);
+                break;
+            }
+
             // Solo Administradores pueden listar empleados
             if ($_SESSION['usuario']['rol'] !== 'ADMIN') {
                 http_response_code(403);

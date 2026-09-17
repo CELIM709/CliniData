@@ -102,7 +102,7 @@ class Cita {
                 FROM cita c
                 INNER JOIN persona paciente ON c.cedula_paciente = paciente.cedula
                 INNER JOIN persona medico ON c.cedula_medico = medico.cedula
-                WHERE c.estado IN ('PENDIENTE', 'CONFIRMADA')
+                WHERE c.estado IN ('PENDIENTE')
                 ORDER BY lower(c.rango_cita) ASC
                 LIMIT {$limite}";
 
@@ -144,7 +144,7 @@ class Cita {
         $transiciones = [
             'PENDIENTE' => ['PENDIENTE', 'CONFIRMADA', 'CANCELADA'],
             'CONFIRMADA' => ['CONFIRMADA', 'CANCELADA'],
-            'CANCELADA' => ['CANCELADA'],
+            'CANCELADA' => ['CANCELADA', 'PENDIENTE'],
             'COMPLETADA' => ['COMPLETADA']
         ];
         if (!in_array($nuevo_estado, $transiciones[$estadoActual], true)) {
@@ -261,5 +261,25 @@ class Cita {
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':cedula_paciente' => $cedula_paciente]);
         return $stmt->fetchAll();
+    }
+
+    public function obtenerTodasLasCitas() {
+        $sql = "SELECT c.id_cita,
+                       lower(c.rango_cita) AS fecha_inicio,
+                       upper(c.rango_cita) AS fecha_fin,
+                       c.consultorio,
+                       c.estado,
+                       c.cedula_paciente,
+                       c.cedula_medico,
+                       paciente.nombre AS paciente_nombre,
+                       paciente.apellido AS paciente_apellido,
+                       medico.nombre AS medico_nombre,
+                       medico.apellido AS medico_apellido
+                FROM cita c
+                INNER JOIN persona paciente ON c.cedula_paciente = paciente.cedula
+                INNER JOIN persona medico ON c.cedula_medico = medico.cedula
+                ORDER BY fecha_inicio DESC";
+
+        return $this->db->query($sql)->fetchAll();
     }
 }

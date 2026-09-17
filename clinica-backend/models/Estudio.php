@@ -52,7 +52,7 @@ class Estudio {
     /**
      * Registrar la ejecución de un estudio asociando al laboratorista responsable
      */
-    public function completarEstudio($id_estudio, $cedula_laboratorista) {
+    public function completarEstudio($id_estudio, $laboratorista) {
         $sql = "UPDATE estudio 
                 SET estado = 'REALIZADO', 
                     laboratorista = :laboratorista 
@@ -68,9 +68,9 @@ class Estudio {
     }
 
     /**
-     * Actualizar el estado de un estudio respetando sus transiciones.
+     * Actualizar el estado de un estudio respetando sus transiciones y actualizando el laboratorista si se proporciona.
      */
-    public function cambiarEstado($id_estudio, $estado) {
+    public function cambiarEstado($id_estudio, $estado, $laboratorista = null) {
         $estado = strtoupper(trim($estado));
         if (!in_array($estado, ['PENDIENTE', 'REALIZADO', 'CANCELADA'], true)) {
             throw new Exception('Estado de estudio no válido.');
@@ -83,8 +83,9 @@ class Estudio {
             throw new Exception('El estudio no existe.');
         }
 
+        // Permitimos la transición de PENDIENTE a REALIZADO o CANCELADA
         $transiciones = [
-            'PENDIENTE' => ['PENDIENTE', 'CANCELADA'],
+            'PENDIENTE' => ['PENDIENTE', 'REALIZADO', 'CANCELADA'],
             'REALIZADO' => ['REALIZADO'],
             'CANCELADA' => ['CANCELADA']
         ];
@@ -92,18 +93,29 @@ class Estudio {
             throw new Exception("No se puede cambiar un estudio de {$estadoActual} a {$estado}.");
         }
 
-        $sql = "UPDATE estudio SET estado = :estado WHERE id_estudio = :id_estudio";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            ':estado'      => $estado,
+        // Construcción dinámica de la consulta UPDATE
+        $sql = "UPDATE estudio SET estado = :estado";
+        $params = [
+            ':estado'     => $estado,
             ':id_estudio' => $id_estudio
-        ]);
+        ];
+
+        // Si viene la cédula del laboratorista, la sumamos a la consulta
+        if ($laboratorista !== null && trim($laboratorista) !== '') {
+            $sql .= ", laboratorista = :laboratorista";
+            $params[':laboratorista'] = trim($laboratorista);
+        }
+
+        $sql .= " WHERE id_estudio = :id_estudio";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
     }
 
     /**
-     * Obtener los estudios solicitados para la bandeja general de laboratorio (Pendientes)
+     * Obtener los estudios solicitados para la bandeja general de laboratorio 
      */
-    public function obtenerPendientes() {
+    public function obtenerTodosEstudios() {
         $sql = "SELECT e.id_estudio, e.id_tipo_estudio, te.nombre_estudio, te.nombre_estudio AS tipo, 
                        e.fecha, e.estado, e.id_consulta,
                        p_pac.cedula AS paciente_cedula, p_pac.nombre AS paciente_nombre, p_pac.apellido AS paciente_apellido,
@@ -116,7 +128,6 @@ class Estudio {
                 INNER JOIN medico med ON c.cedula_medico = med.cedula
                 INNER JOIN empleado emp_med ON med.cedula = emp_med.cedula
                 INNER JOIN persona p_med ON emp_med.cedula = p_med.cedula
-                WHERE e.estado = 'PENDIENTE'
                 ORDER BY e.fecha ASC";
 
         $stmt = $this->db->query($sql);
@@ -193,6 +204,30 @@ class Estudio {
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id_tipo_estudio' => $id_tipo_estudio]);
+        return $stmt->fetchAll();
+    }
+
+    public function obtenerTopMasSolicitados($limit = 5, $excluirCancelados = true) {
+        $sql = "SELECT 
+                    te.id_tipo_estudio, 
+                    te.nombre_estudio, 
+                    COUNT(e.id_estudio) AS total_solicitudes
+                FROM estudio e
+                INNER JOIN tipo_estudio te ON e.id_tipo_estudio = te.id_tipo_estudio";
+
+        if ($excluirCancelados) {
+            $sql .= " WHERE e.estado != 'CANCELADA'";
+        }
+
+        $sql .= " GROUP BY te.id_tipo_estudio, te.nombre_estudio
+                  ORDER BY total_solicitudes DESC
+                  LIMIT :limit";
+
+        $stmt = $this->db->prepare($sql);
+        // Es importante forzar el parámetro como Entero para el LIMIT en PDO
+        $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
         return $stmt->fetchAll();
     }
 }

@@ -492,12 +492,12 @@ document.addEventListener('DOMContentLoaded', cargarEspecialidades);
 
                 container.innerHTML = '<strong>Exámenes y Resultados:</strong><ul style="margin: 8px 0; padding-left: 20px;">' + 
                     resultados.map(r => `
-                        <li style="margin-bottom: 6px;">
-                            <strong>${r.tipo_estudio || 'Estudio'}:</strong> ${r.descripcion || 'Sin descripción'}
-                            ${r.ruta_archivo 
-                                ? `<br><a href="${r.ruta_archivo}" target="_blank" style="color: #0066cc; text-decoration: underline;">Ver Adjunto</a>` 
-                                : '<br><small style="color:var(--text-muted);"><i>(Sin archivo adjunto)</i></small>'}
-                        </li>
+                       <li style="margin-bottom: 6px;">
+                        <strong>${r.tipo_estudio || 'Estudio'}:</strong> ${r.descripcion || 'Sin descripción'}
+                        ${r.ruta_archivo 
+                            ? `<br><a href="../clinica-backend/api/ver_resultado.php?id=${r.id_resultado}" target="_blank" style="color: #0066cc; text-decoration: underline;">Ver Adjunto</a>` 
+                            : '<br><small style="color:var(--text-muted);"><i>(Sin archivo adjunto)</i></small>'}
+                    </li>
                     `).join('') + '</ul>';
             } catch (err) {
                 container.innerHTML = `<small style="color: #dc3545;">${err.message}</small>`;

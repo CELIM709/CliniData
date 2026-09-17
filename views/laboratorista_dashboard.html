@@ -15,24 +15,167 @@
             <img src="../images/logoclinidata.png" alt="CliniData Logo" class="brand-logo">
         </div>
         <ul class="sidebar-menu">
-            <li><a onclick="showSection('estudio-registro')" class="active" id="link-estudio-registro">Registrar Estudio</a></li>
-            <li><a onclick="showSection('estudio-edicion')" id="link-estudio-edicion">Editar Estudio</a></li>
-            <li><a onclick="showSection('resultado-registro')" id="link-resultado-registro">Cargar Resultado</a></li>
+            <li><a onclick="showSection('estudios-lista')" class="active" id="link-estudios-lista">Ver Estudios</a></li>
+            <li><a onclick="showSection('estudio-registro')" id="link-estudio-registro">Registrar Estudio</a></li>
+            <div style="margin-top: auto;">
+                <a href="#" id="btn-logout" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
+            </div>
         </ul>
-        <div style="margin-top: auto;">
-            <a href="login.html" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
-        </div>
+        
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
     <main class="main-content">
         <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h1>Panel de Laboratorio</h1>
-           <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Cambiar modo claro/oscuro" title="Cambiar tema">🌓</button>
+            <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Cambiar modo claro/oscuro" title="Cambiar tema">🌓</button>
         </div>
 
-        <!-- SECCIÓN: REGISTRO DE ESTUDIO -->
-        <section id="estudio-registro" class="card">
+        <!-- SECCIÓN 1: LISTADO GENERAL DE ESTUDIOS -->
+        <section id="estudios-lista" class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h3 class="card-title" style="margin: 0;">Lista General de Estudios</h3>
+                <input 
+                    type="text" 
+                    id="buscar_estudio_laboratorio" 
+                    class="form-control mb-3" 
+                    style="max-width: 350px;"
+                    placeholder="Buscar por cédula/nombre, tipo o Fecha..."
+                    
+                >
+                <!-- Filtro por Estado -->
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label for="filtro_estado_estudios" style="font-size: 0.9em;">Filtrar:</label>
+                    <select id="filtro_estado_estudios"  style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <option value="TODOS">Todos los estados</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="REALIZADO">Realizado</option>
+                        <option value="CANCELADO">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 750px;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
+                            <th style="padding: 12px 8px;">ID</th>
+                            <th style="padding: 12px 8px;">Fecha</th>
+                            <th style="padding: 12px 8px;">Paciente</th>
+                            <th style="padding: 12px 8px;">Médico</th>
+                            <th style="padding: 12px 8px;">Tipo de Estudio</th>
+                            <th style="padding: 12px 8px;">Estado</th>
+                            <th style="padding: 12px 8px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="todos-los-estudios">
+                        <tr><td colspan="6" style="padding: 14px 8px;">Cargando listado general...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: VER DETALLE Y GESTIONAR RESULTADOS DE UN ESTUDIO -->
+        <section id="estudio-detalle" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 class="card-title" style="margin: 0;">Detalle del Estudio #<span id="det_id_estudio_label">-</span></h3>
+                <button class="btn btn-outline" onclick="showSection('estudios-lista')">← Volver al Listado</button>
+            </div>
+
+            <!-- Información General del Estudio (Solo Lectura, salvo Estado) -->
+            <form id="form-edicion-estudio" style="margin-bottom: 30px;">
+                <input type="hidden" id="id_estudio" name="id_estudio">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_id_consulta">ID de Consulta</label>
+                        <input type="number" id="edit_id_consulta" name="id_consulta" class="form-control" readonly required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_laboratorista_numero">Cédula del Laboratorista</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="reg_laboratorista_letra" class="form-control" style="max-width:80px;" disabled>
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="reg_laboratorista_numero" class="form-control" readonly required
+                                inputmode="numeric" pattern="\d{7,8}" maxlength="8" placeholder="Ej: 55555555">
+                        </div>
+                        <input type="hidden" id="edit_laboratorista" name="laboratorista">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_tipo">Tipo de Estudio</label>
+                        <input type="text" id="edit_tipo" name="tipo" class="form-control" readonly required maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_estado">Estado del Estudio</label>
+                        <select id="edit_estado" name="estado" class="form-control" required>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="REALIZADO">Realizado</option>
+                            <option value="CANCELADA">Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_fecha">Fecha del Estudio</label>
+                    <input type="datetime-local" id="edit_fecha" name="fecha" class="form-control" readonly required>
+                </div>
+
+                <div class="form-actions" style="justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary">Actualizar Estado</button>
+                </div>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+            <!-- SUB-SECCIÓN: RESULTADOS ADJUNTOS -->
+            <h4 style="margin-bottom: 15px;">Resultados Adjuntados</h4>
+            <div style="overflow-x: auto; margin-bottom: 25px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
+                            <th style="padding: 8px;">ID Resultado</th>
+                            <th style="padding: 8px;">Descripción / Notas</th>
+                            <th style="padding: 8px;">Archivo</th>
+                            <th style="padding: 8px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-resultados-adjuntos">
+                        <tr><td colspan="4" style="padding: 10px 8px;">No hay resultados cargados para este estudio.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SUB-SECCIÓN: CARGAR NUEVO RESULTADO -->
+            <div style="background-color: rgba(0,0,0,0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h4 style="margin-top: 0; margin-bottom: 15px;">+ Cargar Nuevo Resultado</h4>
+                <form id="form-registro-resultado" enctype="multipart/form-data">
+                    <!-- ID del Estudio (oculto y autocompletado al entrar al detalle) -->
+                    <input type="hidden" id="res_id_estudio" name="id_estudio">
+
+                    <div class="form-group">
+                        <label for="res_descripcion">Descripción / Notas Médicas</label>
+                        <textarea id="res_descripcion" name="descripcion" class="form-control" required placeholder="Escriba los detalles o hallazgos del resultado..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="res_ruta_archivo">Archivo de Resultados (PDF, JPG, PNG)</label>
+                        <input type="file" id="res_ruta_archivo" name="archivo" class="form-control" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Cargar Resultado</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: REGISTRO DE NUEVO ESTUDIO -->
+        <section id="estudio-registro" class="card hidden">
             <h3 class="card-title">Registrar Nuevo Estudio</h3>
             <form id="form-registro-estudio">
                 <div class="form-row">
@@ -71,7 +214,6 @@
                     </div>
                 </div>
 
-                <!-- La fecha de estudio es TIMESTAMP con DEFAULT en BD, pero se puede mandar explícitamente -->
                 <div class="form-group">
                     <label for="reg_fecha">Fecha del Estudio</label>
                     <input type="datetime-local" id="reg_fecha" name="fecha" class="form-control" required>
@@ -84,108 +226,41 @@
             </form>
         </section>
 
-        <!-- SECCIÓN: EDICIÓN DE ESTUDIO -->
-        <section id="estudio-edicion" class="card hidden">
-            <h3 class="card-title">Editar Estudio</h3>
-            <form id="form-edicion-estudio">
-                <div class="form-group">
-                    <label for="id_estudio">ID del Estudio</label>
-                    <input type="text" id="id_estudio" name="id_estudio" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="estudios-disponibles" placeholder="Seleccione o escriba un ID">
-                    <datalist id="estudios-disponibles"></datalist>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit_id_consulta">ID de Consulta</label>
-                        <input type="number" id="edit_id_consulta" name="id_consulta" class="form-control" required readonly value="120">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_laboratorista_numero">Cédula del Laboratorista</label>
-                        <div style="display:flex; gap:8px;">
-                            <select id="edit_laboratorista_letra" class="form-control" style="max-width:80px;">
-                                <option value="V">V</option>
-                                <option value="E">E</option>
-                            </select>
-                            <input type="text" id="edit_laboratorista_numero" class="form-control" required
-                                   inputmode="numeric" pattern="\d{7,8}" maxlength="8"
-                                   placeholder="Ej: 30437441" title="7 u 8 dígitos, sin letras ni guiones" value="55555555">
-                        </div>
-                        <small id="edit_laboratorista_error" class="hidden" style="color:#dc3545; font-size:12px;">
-                            La cédula debe tener entre 7 y 8 dígitos, sin letras ni espacios.
-                        </small>
-                        <input type="hidden" id="edit_laboratorista" name="laboratorista" value="V-55555555">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit_tipo">Tipo de Estudio</label>
-                        <input type="text" id="edit_tipo" name="tipo" class="form-control" required maxlength="100" value="Perfil Lipídico">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_estado">Estado</label>
-                        <select id="edit_estado" name="estado" class="form-control" required>
-                            <option value="CANCELADA">Cancelada</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit_fecha">Fecha del Estudio</label>
-                    <input type="datetime-local" id="edit_fecha" name="fecha" class="form-control" required value="2026-09-04T10:00">
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
-        </section>
-
-        <!-- SECCIÓN: REGISTRO DE RESULTADO -->
-        <section id="resultado-registro" class="card hidden">
-            <h3 class="card-title">Cargar Resultado de Laboratorio</h3>
-            <form id="form-registro-resultado" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="res_id_estudio">ID del Estudio Asociado</label>
-                    <input type="text" id="res_id_estudio" name="id_estudio" class="form-control" required pattern="[0-9]+" inputmode="numeric" list="estudios-resultado-disponibles" placeholder="Seleccione o escriba un ID">
-                    <datalist id="estudios-resultado-disponibles"></datalist>
-                </div>
-
-                <div class="form-group">
-                    <label for="res_descripcion">Descripción / Notas Médicas</label>
-                    <textarea id="res_descripcion" name="descripcion" class="form-control" required placeholder="Detalles del resultado..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="res_ruta_archivo">Archivo de Resultados (PDF, JPG, etc)</label>
-                    <!-- El campo en BD se llama ruta_archivo, el input type="file" captura el archivo, y PHP guardará la ruta -->
-                    <input type="file" id="res_ruta_archivo" name="archivo" class="form-control" required>
-                </div>
-
-                <div class="form-actions">
-                    <button type="reset" class="btn btn-outline">Limpiar</button>
-                    <button type="submit" class="btn btn-primary">Cargar Resultado</button>
-                </div>
-            </form>
-        </section>
-
     </main>
 </div>
 
 <script>
     function showSection(sectionId) {
-        
         const sections = document.querySelectorAll('.main-content section');
         sections.forEach(s => s.classList.add('hidden'));
 
         const links = document.querySelectorAll('.sidebar-menu a');
         links.forEach(l => l.classList.remove('active'));
 
-        document.getElementById(sectionId).classList.remove('hidden');
-        document.getElementById('link-' + sectionId).classList.add('active');
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) targetSection.classList.remove('hidden');
+
+        const targetLink = document.getElementById('link-' + sectionId);
+        if (targetLink) targetLink.classList.add('active');
     }
 
-    // Funciones de validación
+    // Función global auxiliar para ver detalle de estudio (integracion.js la implementará/sobreescribirá con datos reales del API)
+    function verDetalleEstudio(idEstudio) {
+        // Asignar el ID en la etiqueta de vista y en los inputs ocultos
+        const label = document.getElementById('det_id_estudio_label');
+        if (label) label.innerText = idEstudio;
+
+        const inputEditId = document.getElementById('id_estudio');
+        if (inputEditId) inputEditId.value = idEstudio;
+
+        const inputResId = document.getElementById('res_id_estudio');
+        if (inputResId) inputResId.value = idEstudio;
+
+        // Mostrar la vista de detalle
+        showSection('estudio-detalle');
+    }
+
+    // Validaciones de cédula
     function combinarCedula(idLetra, idNumero, idOculto) {
         const letra = document.getElementById(idLetra);
         const numero = document.getElementById(idNumero);
@@ -206,7 +281,6 @@
         }
     }
 
-    // Registro
     function mostrarErrorCedula(idNumero, idError) {
         const input = document.getElementById(idNumero);
         const error = document.getElementById(idError);
@@ -221,16 +295,14 @@
         }
     }
 
-
+    // Inicializaciones de validación
     combinarCedula('reg_laboratorista_letra', 'reg_laboratorista_numero', 'reg_laboratorista');
     soloNumeros('reg_laboratorista_numero');
     mostrarErrorCedula('reg_laboratorista_numero', 'reg_laboratorista_error');
 
-    // Edición
     combinarCedula('edit_laboratorista_letra', 'edit_laboratorista_numero', 'edit_laboratorista');
     soloNumeros('edit_laboratorista_numero');
     mostrarErrorCedula('edit_laboratorista_numero', 'edit_laboratorista_error');
-
 </script>
 <script src="../js/integracion.js"></script>
 </body>

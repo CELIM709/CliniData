@@ -122,7 +122,7 @@ try {
 
             // Lógica de procesamiento de archivo físico si viene en $_FILES
             if (isset($_FILES['archivo']) && $_FILES['archivo']['error'] === UPLOAD_ERR_OK) {
-                $directorioUploads = __DIR__ . '/../uploads/resultados/';
+                $directorioUploads = __DIR__ . '/../../uploads/resultados/';
 
                 // Crear el directorio si no existe
                 if (!is_dir($directorioUploads)) {
@@ -181,7 +181,7 @@ try {
 
             // Elimina físicamente el archivo del servidor si existe
             if ($rutaArchivo) {
-                $pathFisico = __DIR__ . '/../' . $rutaArchivo;
+                $pathFisico = __DIR__ . '/../../' . $rutaArchivo;
                 if (file_exists($pathFisico)) {
                     @unlink($pathFisico);
                 }

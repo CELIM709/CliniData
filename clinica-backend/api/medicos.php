@@ -27,6 +27,30 @@ try {
 
         // --- CONSULTAR MÉDICOS ---
         case 'GET':
+
+            // Obtener top de médicos por cantidad de citas (?top_citas=5)
+            if (isset($_GET['top_citas'])) {
+                $limit = filter_var($_GET['top_citas'], FILTER_VALIDATE_INT) ?: 5;
+                $medicos = $medicoModel->obtenerTopMedicosCitas($limit);
+                echo json_encode(['success' => true, 'data' => $medicos]);
+                break;
+            }
+
+            // Opción 1: Obtener médicos por ID de Especialidad (?id_especialidad=X)
+            if (isset($_GET['id_especialidad'])) {
+                $idEspecialidad = filter_var($_GET['id_especialidad'], FILTER_VALIDATE_INT);
+
+                if (!$idEspecialidad) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'ID de especialidad inválido.']);
+                    exit;
+                }
+
+                $medicos = $medicoModel->obtenerPorEspecialidad($idEspecialidad);
+                echo json_encode(['success' => true, 'data' => $medicos]);
+                break;
+            }
+
             if (isset($_GET['cedula'])) {
                 $medico = $medicoModel->obtenerPorCedula($_GET['cedula']);
                 if (!$medico) {
@@ -61,7 +85,7 @@ try {
             $datosEmpleado = $input['empleado'];
             $datosMedico = $input['medico'];
             $especialidades = $input['especialidades'] ?? []; // Array con IDs de especialidades: [1, 3]
-
+            
             $medicoModel->registrarMedico($datosPersona, $datosEmpleado, $datosMedico, $especialidades);
 
             http_response_code(201);

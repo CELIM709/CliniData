@@ -50,6 +50,11 @@ try {
                 break;
             }
 
+            if (isset($_GET['action']) && $_GET['action'] === 'todas') {
+                echo json_encode(['success' => true, 'data' => $citaModel->obtenerTodasLasCitas()]);
+                break;
+            }
+
             if (isset($_GET['action']) && $_GET['action'] === 'editar') {
                 echo json_encode(['success' => true, 'data' => $citaModel->obtenerEditables(10)]);
                 break;

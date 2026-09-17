@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Estado global de la consulta en pantalla
     let currentConsultationId = null;
-    let allDoctorConsultations = []; // Almacena el historial de consultas del médico para filtrado
+    let allDoctorConsultations = []; 
+    let citasDoctorCache = []; // Cache de citas del médico
 
     async function api(endpoint, options = {}) {
         const response = await fetch(API + endpoint, {
@@ -70,6 +71,29 @@ document.addEventListener('DOMContentLoaded', () => {
         catch (error) { if (!location.pathname.endsWith('login.html')) location.href = 'login.html'; return null; }
     }
 
+    async function cerrarSesion(e) {
+    if (e) e.preventDefault();
+
+    try {
+        // 1. Petición a tu API de logout para destruir $_SESSION
+        await fetch(API + 'logout.php', { 
+            method: 'POST' // O GET, según esté configurada tu API
+        });
+    } catch (error) {
+        console.error('Error al cerrar sesión en el servidor:', error);
+    } finally {
+        // 2. Limpiar cualquier estado local guardado
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // 3. Redirigir reemplazando la entrada del historial
+        window.location.replace('login.html');
+    }
+}
+
+// Vincular evento al botón
+document.getElementById('btn-logout')?.addEventListener('click', cerrarSesion);
+
     document.querySelectorAll('a[href="login.html"]').forEach((link) => link.addEventListener('click', async (event) => {
         event.preventDefault();
         try { await api('logout.php', { method: 'POST' }); } finally { location.href = 'login.html'; }
@@ -91,10 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
             formInputs.forEach(input => input.removeAttribute('readonly'));
         }
     }
-
-    // ==========================================
-    // ESPACIO DE TRABAJO DE CONSULTA ACTIVA
-    // ==========================================
 
     window.ocultarConsultaActiva = function() {
         const interfaz = $('interfaz-consulta-activa');
@@ -140,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Obtener los resultados de cada estudio en paralelo
             const examenesConResultados = await Promise.all(
                 examenes.map(async (e) => {
                     try {
@@ -152,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             );
 
-            // Renderizar tarjetas de exámenes con sus adjuntos/resultados
             container.innerHTML = examenesConResultados.map(e => {
                 const tieneResultados = e.resultados && e.resultados.length > 0;
 
@@ -163,8 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${e.resultados.map((r, index) => {
                                 const url = r.ruta_archivo || r.archivo_resultado || r.archivo;
                                 const etiqueta = r.descripcion || r.nombre_estudio || `Adjunto #${index + 1}`;
+                                const ID = r.id_resultado || r.id;
                                 return `
-                                    <a href="${escapeHtml(url)}" target="_blank" class="btn btn-outline" style="font-size:11px; padding:3px 8px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                    <a href="${escapeHtml(API + 'ver_resultado.php?id=' + ID)}" target="_blank" class="btn btn-outline" style="font-size:11px; padding:3px 8px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
                                         📄 ${escapeHtml(etiqueta)}
                                     </a>`;
                             }).join('')}
@@ -235,26 +254,85 @@ document.addEventListener('DOMContentLoaded', () => {
     // CITAS Y CONSULTAS DEL MÉDICO
     // ==========================================
 
-    async function loadDoctorAppointments(user) {
-        const list = $('mis-citas-lista'); 
-        if (!list) return;
-        
-        const appointments = (await api(`citas.php?medico=${encodeURIComponent(user.cedula)}`)).data || [];
-        
-        list.innerHTML = appointments.length ? appointments.map((item) => `
-            <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 12px 8px;">${escapeHtml(item.id_cita)}</td>
-                <td style="padding: 12px 8px;">${escapeHtml(item.cedula_paciente)}</td>
-                <td style="padding: 12px 8px;">${escapeHtml(`${item.paciente_nombre} ${item.paciente_apellido}`)}</td>
-                <td style="padding: 12px 8px;">${escapeHtml(String(item.fecha_inicio || '').slice(0, 16))} - ${escapeHtml(String(item.fecha_fin || '').slice(11, 16))}</td>
-                <td style="padding: 12px 8px;">${escapeHtml(item.consultorio)}</td>
-                <td style="padding: 12px 8px;">${escapeHtml(item.estado)}</td>
-                <td style="padding: 12px 8px;">
-                    ${item.estado === 'CONFIRMADA' ? `<button type="button" class="btn btn-outline" data-usar-cita="${escapeHtml(item.id_cita)}" data-cedula-paciente="${escapeHtml(item.cedula_paciente)}" style="padding: 8px 12px;">Usar cita</button>` : 'Sin acciones'}
-                </td>
-            </tr>
-        `).join('') : '<tr><td colspan="7" style="padding: 14px 8px;">No tienes citas registradas.</td></tr>';
+    function renderTablaDoctor(citas) {
+        const tbody = $('mis-citas-lista');
+        if (!tbody) return;
+
+        if (!citas || citas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="padding: 14px 8px; text-align: center;">No hay citas registradas para este filtro.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = citas.map(c => {
+            const estado = (c.estado || 'pendiente').toLowerCase();
+            
+            let badgeStyle = 'background: #e2e8f0; color: #475569;';
+            if (estado === 'confirmada') badgeStyle = 'background: #dcfce7; color: #166534;';
+            if (estado === 'pendiente') badgeStyle = 'background: #fef9c3; color: #854d0e;';
+            if (estado === 'completada' || estado === 'atendida') badgeStyle = 'background: #e0f2fe; color: #075985;';
+            if (estado === 'cancelada') badgeStyle = 'background: #fee2e2; color: #991b1b;';
+
+            const cedulaPaciente = c.cedula_paciente || c.paciente_cedula || '';
+            const nombrePaciente = `${c.paciente_nombre || ''} ${c.paciente_apellido || ''}`.trim() || 'Paciente';
+
+            return `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 12px 8px;">${escapeHtml(c.id_cita)}</td>
+                    <td style="padding: 12px 8px;">${escapeHtml(cedulaPaciente)}</td>
+                    <td style="padding: 12px 8px;">${escapeHtml(nombrePaciente)}</td>
+                    <td style="padding: 12px 8px;">${escapeHtml(String(c.fecha_inicio || '').slice(0, 16))}</td>
+                    <td style="padding: 12px 8px;">${escapeHtml(c.consultorio || 'N/A')}</td>
+                    <td style="padding: 12px 8px;">
+                        <span style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; ${badgeStyle}">
+                            ${escapeHtml(estado.toUpperCase())}
+                        </span>
+                    </td>
+                    <td style="padding: 12px 8px;">
+                        ${estado === 'confirmada' ? `
+                            <button type="button" class="btn btn-outline" data-usar-cita="${escapeHtml(c.id_cita)}" data-cedula-paciente="${escapeHtml(cedulaPaciente)}" style="padding: 6px 12px;">
+                                Usar / Atender
+                            </button>
+                        ` : `
+                            <span style="color: #94a3b8; font-size: 13px;">Sin acciones</span>
+                        `}
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
+
+    async function loadDoctorAppointments(user) {
+        try {
+            const response = await api(`citas.php?medico=${encodeURIComponent(user.cedula)}`);
+            citasDoctorCache = response.data || [];
+            renderTablaDoctor(citasDoctorCache);
+        } catch (error) {
+            const list = $('mis-citas-lista');
+            if (list) list.innerHTML = `<tr><td colspan="7" style="padding: 14px 8px; color: red;">Error al cargar citas: ${escapeHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    // Exponer la función de filtrado al ámbito global (window)
+    window.filtrarCitasDoctor = function(criterio, btnTarget) {
+        if (btnTarget) {
+            document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+            btnTarget.classList.add('active');
+        }
+
+        const hoyStr = new Date().toISOString().split('T')[0];
+
+        const filtradas = citasDoctorCache.filter(cita => {
+            const estadoCita = (cita.estado || '').toLowerCase();
+            const fechaCita = (cita.fecha_inicio || '').split('T')[0].split(' ')[0];
+
+            if (criterio === 'hoy') return fechaCita === hoyStr;
+            if (criterio === 'confirmada') return estadoCita === 'confirmada';
+            if (criterio === 'pendiente') return estadoCita === 'pendiente';
+            return true;
+        });
+
+        renderTablaDoctor(filtradas);
+    };
 
     function renderDoctorConsultations(consultations) {
         const list = $('lista-mis-consultas');
@@ -270,6 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="padding: 12px 8px;">${escapeHtml(item.id_consulta)}</td>
                 <td style="padding: 12px 8px;">${escapeHtml(item.paciente_nombre || '')} ${escapeHtml(item.paciente_apellido || '')}</td>
                 <td style="padding: 12px 8px;">${escapeHtml(item.paciente_cedula)}</td>
+                <td style="padding: 12px 8px;">${escapeHtml(String(item.fecha || '').slice(0, 10))}</td>
                 <td style="padding: 12px 8px;">${escapeHtml(item.diagnostico || 'Sin diagnóstico')}</td>
                 <td style="padding: 12px 8px;">$${escapeHtml(item.costo || '0.00')}</td>
                 <td style="padding: 12px 8px; text-align: right;">
@@ -292,14 +371,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Buscador de consultas por cédula o nombre en tiempo real
     $('buscar_consulta_cedula')?.addEventListener('input', (event) => {
         const term = event.target.value.trim().toLowerCase();
 
         const filtered = allDoctorConsultations.filter((item) => {
             const cedula = String(item.paciente_cedula || '').toLowerCase();
             const nombreCompleto = `${item.paciente_nombre || ''} ${item.paciente_apellido || ''}`.toLowerCase();
-            return cedula.includes(term) || nombreCompleto.includes(term);
+            const fecha = String(item.fecha || '').toLowerCase();
+            return cedula.includes(term) || nombreCompleto.includes(term) || fecha.includes(term);
         });
 
         renderDoctorConsultations(filtered);
@@ -311,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDetail(button.dataset.verConsulta).catch((error) => message(error.message, true));
     });
 
+    // Manejo de clic en las citas para iniciar consulta
     $('mis-citas-lista')?.addEventListener('click', (event) => {
         const button = event.target.closest('[data-usar-cita]');
         if (!button) return;
@@ -330,7 +410,6 @@ document.addEventListener('DOMContentLoaded', () => {
         text('lista-recetas-consulta', 'Guarde la consulta primero para poder emitir recetas.');
         text('lista-examenes-consulta', 'Guarde la consulta primero para poder solicitar exámenes.');
 
-        // Transición de pantallas
         $('mis-citas')?.classList.add('hidden');
         $('mis-consultas')?.classList.remove('hidden');
 

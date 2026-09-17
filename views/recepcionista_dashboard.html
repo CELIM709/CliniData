@@ -20,10 +20,12 @@
             <li><a onclick="showSection('paciente-edicion')" id="link-paciente-edicion">Editar Paciente</a></li>
             <li><a onclick="showSection('cita-registro')" id="link-cita-registro">Registrar Cita</a></li>
             <li><a onclick="showSection('cita-edicion')" id="link-cita-edicion">Editar Cita</a></li>
+
+            <div style="margin-top: auto;">
+                <a href="#" id="btn-logout" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
+            </div>
         </ul>
-        <div style="margin-top: auto;">
-            <a href="login.html" class="btn btn-outline" style="width: 100%; text-align: center;">Cerrar Sesión</a>
-        </div>
+        
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
@@ -54,6 +56,8 @@
                     <span class="number" id="resumen_consultorios">--</span>
                 </div>
             </div>
+
+    <!-- CITAS DEL DÍA -->
             <h3 class="card-title" style="margin-top: 25px;">Citas del Día</h3>
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
@@ -69,7 +73,49 @@
                         </tr>
                     </thead>
                     <tbody id="citas-del-dia">
-                        <tr><td colspan="7" style="padding: 14px 8px;">Cargando citas...</td></tr>
+                        <tr><td colspan="7" style="padding: 14px 8px;">Cargando citas del día...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TODAS LAS CITAS (NUEVA SECCIÓN) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h3 class="card-title" style="margin: 0;">Todas las Citas</h3>
+                <input 
+                    type="text" 
+                    id="buscar_cita_recepcion" 
+                    class="form-control mb-3" 
+                    placeholder="Buscar por cédula/nombre de paciente o médico | fecha..."
+                >
+                <!-- Filtro por Estado -->
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label for="filtro_estado_citas" style="font-size: 0.9em;">Filtrar:</label>
+                    <select id="filtro_estado_citas" onchange="filtrarTodasLasCitas()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <option value="TODOS">Todos los estados</option>
+                        <option value="PENDIENTE">Pendientes</option>
+                        <option value="CONFIRMADA">Confirmadas</option>
+                        <option value="COMPLETADA">Completadas</option>
+                        <option value="CANCELADA">Canceladas</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 750px;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
+                            <th style="padding: 12px 8px;">ID</th>
+                            <th style="padding: 12px 8px;">Fecha</th>
+                            <th style="padding: 12px 8px;">Paciente</th>
+                            <th style="padding: 12px 8px;">Médico</th>
+                            <th style="padding: 12px 8px;">Horario</th>
+                            <th style="padding: 12px 8px;">Consultorio</th>
+                            <th style="padding: 12px 8px;">Estado</th>
+                            <th style="padding: 12px 8px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="todas-las-citas">
+                        <tr><td colspan="8" style="padding: 14px 8px;">Cargando listado general...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -392,6 +438,7 @@
                             <option value="">Seleccione...</option>
                             <option value="CONFIRMADA">Confirmada</option>
                             <option value="CANCELADA">Cancelada</option>
+                            <option value="PENDIENTE">Pendiente</option>
                         </select>
                     </div>
                 </div>

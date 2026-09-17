@@ -33,6 +33,17 @@ try {
         // --- CONSULTAR ESTUDIOS (GET) ---
         
         case 'GET':
+
+            // Opción Top: Obtener los estudios más solicitados (?top=5 o ?action=top)
+            if (isset($_GET['top']) || (isset($_GET['action']) && $_GET['action'] === 'top')) {
+                // Obtiene el límite enviado (por defecto 5 si no se especifica o si es inválido)
+                $limit = filter_var($_GET['top'] ?? $_GET['limit'] ?? 5, FILTER_VALIDATE_INT) ?: 5;
+                
+                $estudios = $estudioModel->obtenerTopMasSolicitados($limit);
+                echo json_encode(['success' => true, 'data' => $estudios]);
+                break;
+            }
+            
             // Opción 1: Obtener estudios de una consulta específica (?id_consulta=X)
             if (isset($_GET['id_consulta'])) {
                 $idConsulta = filter_var($_GET['id_consulta'], FILTER_VALIDATE_INT);
@@ -73,7 +84,7 @@ try {
             }
 
             // Opción 4 (Por defecto / ?action=pendientes): Bandeja general de laboratorio (Pendientes)
-            $estudios = $estudioModel->obtenerPendientes();
+            $estudios = $estudioModel->obtenerTodosEstudios();
             echo json_encode(['success' => true, 'data' => $estudios]);
             break;
 
@@ -201,8 +212,9 @@ try {
             }
 
             // Cambiar estado mediante PUT
-            if (isset($input['id_estudio']) && isset($input['estado'])) {
-                $resultado = $estudioModel->cambiarEstado($input['id_estudio'], strtoupper($input['estado']));
+            if (isset($input['id_estudio']) && isset($input['estado']) && isset($input['laboratorista'])) {
+                $resultado = $estudioModel->cambiarEstado($input['id_estudio'], strtoupper($input['estado']), $input['laboratorista']);
+
                 echo json_encode(['success' => $resultado, 'mensaje' => $resultado ? 'Estado actualizado.' : 'Error al cambiar estado.']);
                 break;
             }
