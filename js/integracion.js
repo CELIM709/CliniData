@@ -1,3 +1,6 @@
+// Este archivo esta CURSEDO y NO SE DEBE MODIFICAR xd
+// Nota: no implementar logica de diferentes usuarios en un solo archivo MONOLITICO D:
+
 document.addEventListener('DOMContentLoaded', () => {
     const API = '../clinica-backend/api/';
     const $ = (id) => document.getElementById(id);
@@ -379,10 +382,71 @@ document.getElementById('btn-logout')?.addEventListener('click', cerrarSesion);
         await api('empleados.php', { method: 'POST', body: JSON.stringify(employee('lab', 'LABORATORISTA', { carnet_bioanalista: `M.P.P.S. ${val('lab_carnet_bioanalista_numero')}`, area: val('lab_area') })) });
         form.reset(); await adminSummary(); message('Laboratorista registrado correctamente.');
     });
+    
     bind('#form-registro-medico', async (form) => {
-        const specialties = Array.from($('med_especialidades')?.selectedOptions || []).map((option) => option.value);
-        await api('empleados.php', { method: 'POST', body: JSON.stringify(employee('med', 'MEDICO', { carnet_medico: `M.P.P.S. ${val('med_carnet_medico_numero')}`, tarifa: val('med_tarifa'), especialidades: specialties })) });
-        form.reset(); await adminSummary(); message('Médico registrado correctamente.');
+        const cedulaLetra = val('med_cedula_letra');
+        const cedulaNum = val('med_cedula_numero');
+        const cedulaCompleta = `${cedulaLetra}-${cedulaNum}`;
+
+        const telPrefijo = val('med_telefono_prefijo');
+        const telNum = val('med_telefono_numero');
+        const telefonoCompleto = telNum
+            ? `${telPrefijo}${telNum}`
+            : null;
+
+        const carnetNum = val('med_carnet_medico_numero');
+        const carnetCompleto = `M.P.P.S. ${carnetNum}`;
+
+        const selectEspecialidades = $('form_med_especialidades');
+
+        const especialidades = Array.from(selectEspecialidades?.selectedOptions || [])
+            .map(option => parseInt(option.value, 10))
+            .filter(id => !isNaN(id));
+
+        if (especialidades.length === 0) {
+            throw new Error('Por favor, seleccione al menos una especialidad.');
+        }
+
+        const payload = {
+            persona: {
+                cedula: cedulaCompleta,
+                nombre: val('med_nombre'),
+                apellido: val('med_apellido'),
+                fecha_nacimiento: val('med_fecha_nacimiento'),
+                telefono: telefonoCompleto,
+                email: val('med_email') || null,
+                direccion: val('med_direccion') || null
+            },
+
+            empleado: {
+                cedula: cedulaCompleta,
+                salario: parseFloat(val('med_salario')),
+                fecha_contratado: val('med_fecha_contratado'),
+                id_horario: parseInt(val('med_id_horario'), 10),
+                clave_acceso: $('med_clave_acceso')?.value || '',
+                rol: 'MEDICO'
+            },
+
+            medico: {
+                cedula: cedulaCompleta,
+                carnet_medico: carnetCompleto,
+                tarifa: parseFloat(val('med_tarifa'))
+            },
+
+            especialidades: especialidades
+        };
+
+        const result = await api('medicos.php', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        if (!result.success) {
+            throw new Error(result.error || 'No se pudo completar el registro.');
+        }
+
+        form.reset();
+        message(result.mensaje || 'Médico registrado con éxito.');
     });
 
     bind('#paciente-registro form', async (form) => {
@@ -738,6 +802,166 @@ window.verDetalleEstudio = function(id) {
 
 
     // nueva seccion del admin y reportes:
+    async function cargarTopEstudios() {
+        const lista = document.getElementById('top_estudios_lista');
+
+        try {
+            const response = await fetch(API + 'estudios.php?action=top');
+            const result = await response.json();
+
+            if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+                lista.innerHTML = result.data.map(item => `
+                    <li class="top-item" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color, #eee);">
+                        <span class="nombre-estudio" style="font-size: 0.9rem; min-width: 0; word-break: break-word;">
+                            <strong>${item.nombre || item.nombre_estudio}</strong>
+                        </span>
+                        <span class="total-texto" style="color: #6c757d; font-size: 0.85rem; font-weight: 500; white-space: nowrap; flex-shrink: 0;">
+                            ${item.total_solicitudes} solicitudes
+                        </span>
+                    </li>
+                `).join('');
+            } else {
+                lista.innerHTML = '<li>No hay registros de estudios.</li>';
+            }
+        } catch (error) {
+            console.error('Error al cargar top estudios:', error);
+            lista.innerHTML = '<li style="color: red;">Error al obtener el reporte.</li>';
+        }
+    }
+
+    // Ejecutar al cargar la página
+    document.addEventListener('DOMContentLoaded', cargarTopEstudios);
+
+    document.addEventListener('DOMContentLoaded', () => {
+    // 1. Cargar el selector de especialidades al iniciar
+    cargarEspecialidadesSelect();
+
+    // 2. Escuchar el evento change del selector
+    const selectEspecialidades = document.getElementById('med_especialidades');
+    if (selectEspecialidades) {
+        selectEspecialidades.addEventListener('change', (e) => {
+            const idEspecialidad = e.target.value;
+            cargarMedicosPorEspecialidad(idEspecialidad);
+        });
+    }
+});
+
+// Función para llenar los <select> de especialidades (Filtro y Formulario)
+    async function cargarEspecialidadesSelect() {
+        const selectFiltro = document.getElementById('med_especialidades');
+        const selectForm = document.getElementById('form_med_especialidades');
+        
+        try {
+            const response = await fetch(API + 'especialidades.php');
+            const result = await response.json();
+
+            if (result.success && Array.isArray(result.data)) {
+                
+                // 1. Llenar el select del filtro de reportes
+                if (selectFiltro) {
+                    selectFiltro.innerHTML = '<option value="">-- Seleccione una especialidad --</option>';
+                    result.data.forEach(esp => {
+                        const option = document.createElement('option');
+                        option.value = esp.id_especialidad;
+                        option.textContent = esp.nombre;
+                        selectFiltro.appendChild(option);
+                    });
+                }
+
+                // 2. Llenar el select del formulario de registro
+                if (selectForm) {
+                    selectForm.innerHTML = ''; // Elimina las opciones fijas del HTML
+                    result.data.forEach(esp => {
+                        const option = document.createElement('option');
+                        option.value = esp.id_especialidad;
+                        option.textContent = esp.nombre;
+                        selectForm.appendChild(option);
+                    });
+                }
+
+            }
+        } catch (error) {
+            console.error('Error al cargar especialidades:', error);
+        }
+    }
+
+// Función para obtener y listar los médicos según la especialidad seleccionada
+    async function cargarMedicosPorEspecialidad(idEspecialidad) {
+        const contenedor = document.getElementById('contenedor_medicos_especialidad');
+
+        if (!idEspecialidad) {
+            contenedor.innerHTML = '<p style="color: #666; font-style: italic; font-size: 0.9rem;">Seleccione una especialidad para ver los médicos asociados.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '<p style="font-size: 0.9rem;">Cargando médicos...</p>';
+
+        try {
+            // Llama al endpoint de médicos enviando el filtro GET id_especialidad
+            const response = await fetch(`${API}medicos.php?id_especialidad=${idEspecialidad}`);
+            const result = await response.json();
+
+            if (result.success && result.data.length > 0) {
+                let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+                
+                result.data.forEach(medico => {
+                    html += `
+                        <li style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color, #eee);">
+                            <span style="font-size: 0.9rem; min-width: 0; word-break: break-word;">
+                                <strong>${medico.nombre} ${medico.apellido}</strong>
+                            </span>
+                            <span style="color: #6c757d; font-size: 0.85rem; font-weight: 500; white-space: nowrap; flex-shrink: 0;">
+                                C.I.: ${medico.cedula}
+                            </span>
+                        </li>
+                    `;
+                });
+                
+                html += '</ul>';
+                contenedor.innerHTML = html;
+            } else {
+                contenedor.innerHTML = '<p style="color: #777; font-size: 0.9rem;">No hay médicos registrados en esta especialidad.</p>';
+            }
+        } catch (error) {
+            console.error('Error al cargar médicos por especialidad:', error);
+            contenedor.innerHTML = '<p style="color: red; font-size: 0.9rem;">Ocurrió un error al cargar la información.</p>';
+        }
+    }
+
+    $('med_especialidades')?.addEventListener('change', (event) => {
+        const idEspecialidad = event.target.value;
+        cargarMedicosPorEspecialidad(idEspecialidad);
+    });
+
+
+    async function cargarTopMedicos() {
+        const lista = document.getElementById('top_medicos_lista');
+        
+        try {
+            const response = await fetch(API + 'medicos.php?top_citas');
+            const result = await response.json();
+
+            if (result.success && result.data.length > 0) {
+                lista.innerHTML = '';
+                result.data.forEach(medico => {
+                    const li = document.createElement('li');
+                    li.style.marginBottom = '0.4rem';
+                    li.innerHTML = `<strong>${medico.nombre} ${medico.apellido}</strong> ${medico.cedula} | <span style="color: #666; font-size: 0.85rem;">(${medico.total_citas} citas)</span>`;
+                    lista.appendChild(li);
+                });
+            } else {
+                lista.innerHTML = '<li style="color: #666; font-style: italic;">No hay citas registradas.</li>';
+            }
+        } catch (error) {
+            console.error('Error al cargar Top Médicos:', error);
+            lista.innerHTML = '<li style="color: red;">Error al cargar datos.</li>';
+        }
+    }
+
+    // Recuerda invocar la función al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarTopMedicos();
+    });
 
     async function loadMedications() {
         const select = $('rec_id_medicamento');
@@ -773,6 +997,49 @@ window.verDetalleEstudio = function(id) {
             list.append(option);
         });
     }
+
+    async function cargarHorariosSelect() {
+    // 1. Guardar los IDs en un arreglo y filtrar solo los que existan en el DOM
+    const selectIds = ['rec_id_horario', 'lab_id_horario', 'med_id_horario'];
+    const selects = selectIds
+        .map(id => document.getElementById(id))
+        .filter(el => el !== null);
+
+    // Si no se encuentra ninguno de los selects en el HTML, no hace nada
+    if (selects.length === 0) return;
+
+    try {
+        const response = await fetch(API + 'empleados.php?action=horarios');
+        const result = await response.json();
+
+        if (result.success && Array.isArray(result.data)) {
+            // 2. Construir el HTML de las opciones una sola vez
+            let optionsHTML = '<option value="">-- Seleccione un horario --</option>';
+
+            result.data.forEach(h => {
+                const entrada = h.hora_entrada.slice(0, 5);
+                const salida = h.hora_salida.slice(0, 5);
+                optionsHTML += `<option value="${h.id_horario}">${h.dias} (${entrada} - ${salida})</option>`;
+            });
+
+            // 3. Asignar el HTML a todos los selectores encontrados
+            selects.forEach(select => {
+                select.innerHTML = optionsHTML;
+            });
+        } else {
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">No hay horarios disponibles</option>';
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar horarios:', error);
+        selects.forEach(select => {
+            select.innerHTML = '<option value="">Error al cargar horarios</option>';
+        });
+    }
+}
+
+
 
     async function autocompletarPersonaRegistro() {
         const num = val('reg_cedula_numero');
@@ -844,12 +1111,12 @@ window.verDetalleEstudio = function(id) {
 
             form.reset(); 
 
-            // 🔄 Llamada a las funciones de recarga según lo que necesites actualizar
+            //  Llamada a las funciones de recarga según lo que necesites actualizar
             await cargarResultadosAdjuntos(val('res_id_estudio')); // O cargarEstudios(), si la carga de resultado cambia el estado del estudio
 
             message('Resultado cargado correctamente.'); 
             });
 
-    session().then((user) => { configureLaboratoristaSession(user); return Promise.all([receptionSummary().catch(() => {}), loadAllAppointments().catch(() => {}), cargarEstudios().catch(() => {}) , loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), loadMedications().catch(() => {}), loadStudyOptions().catch(() => {}), loadConsultationOptions().catch(() => {}), loadAppointmentOptions().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]); });
+    session().then((user) => { configureLaboratoristaSession(user); return Promise.all([receptionSummary().catch(() => {}), cargarHorariosSelect().catch(() => {}), cargarTopMedicos().catch(() => {}) ,cargarEspecialidadesSelect().catch(() => {}), cargarTopEstudios().catch(() => {}), loadAllAppointments().catch(() => {}), cargarEstudios().catch(() => {}) , loadTodayAppointments().catch(() => {}), adminSummary().catch(() => {}), loadStudyTypes().catch(() => {}), loadMedications().catch(() => {}), loadStudyOptions().catch(() => {}), loadConsultationOptions().catch(() => {}), loadAppointmentOptions().catch(() => {}), user ? Promise.all([loadDoctor(user).catch(() => {}), loadDoctorAppointments(user).catch(() => {})]) : Promise.resolve()]); });
     async function loadDoctor(user) { if (!$('perfil_nombre_texto')) return; const doctor = (await api(`medicos.php?cedula=${encodeURIComponent(user.cedula)}`)).data || {}; set('perfil_nombre_texto', user.nombre); set('perfil_nombre', user.nombre); set('perfil_cedula_numero', user.cedula.split('-')[1]); set('perfil_cedula', user.cedula); set('perfil_carnet_numero', String(doctor.carnet_medico || '').replace(/^M\.P\.P\.S\.\s*/i, '')); set('perfil_carnet', doctor.carnet_medico); set('perfil_tarifa', doctor.tarifa); set('perfil_especialidad', doctor.especialidades); }
 });
