@@ -13,12 +13,7 @@ session_start();
 
 require_once __DIR__ . '/../models/Especialidad.php';
 
-// 1. Verificar autenticación de sesión
-if (!isset($_SESSION['usuario'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Sesion no iniciada.']);
-    exit;
-}
+
 
 $especialidadModel = new Especialidad();
 $metodo = $_SERVER['REQUEST_METHOD'];
